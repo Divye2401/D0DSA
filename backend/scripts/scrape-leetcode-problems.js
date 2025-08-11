@@ -146,6 +146,7 @@ const fetchCompanyData = async (titleSlug) => {
  */
 const processProblemData = (problem, detailsData = null) => {
   // Parse company frequency if available
+
   let companies = {};
   if (detailsData?.companyTagStats) {
     try {
@@ -156,7 +157,7 @@ const processProblemData = (problem, detailsData = null) => {
   }
 
   // Calculate frequency score (0-100) based on various factors
-  const companyCount = Object.keys(companies).length; // number of companies
+  const companyCount = Object.values(companies).flat().length; // number of companies
   const totalCompanyEncounters = Object.values(companies) // total number of encounters
     .flat()
     .reduce((sum, comp) => sum + (comp.timesEncountered || 0), 0);
@@ -164,13 +165,11 @@ const processProblemData = (problem, detailsData = null) => {
   const frequencyScore = Math.min(
     100,
     Math.floor(
-      (problem.freqBar || 0) * 15 + // LeetCode frequency (0-75 points)
-        (problem.acRate > 20 ? Math.min(15, problem.acRate / 5) : 0) + // Acceptance rate bonus (0-15 points)
-        (problem.hasSolution ? 10 : 0) + // Has solution bonus (0-10 points)
-        (companyCount > 0 ? Math.min(20, companyCount * 5) : 0) + // Company diversity (0-20 points)
-        (totalCompanyEncounters > 0
-          ? Math.min(15, totalCompanyEncounters * 2)
-          : 0) // Company frequency (0-15 points)
+      // LeetCode frequency (0-75 points)
+      Math.min(15, problem.acRate / 5) + // Acceptance rate bonus (0-15 points)
+        (problem.hasSolution ? 15 : 0) + // Has solution bonus (0-15 points)
+        Math.min(25, companyCount * 4) + // Company diversity (0-25 points)
+        Math.min(20, totalCompanyEncounters / 5) // Company frequency (0-20 points)
     )
   );
 

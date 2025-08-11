@@ -4,7 +4,18 @@ import supabase from "../utils/supabaseclient";
 const useAuthStore = create((set) => ({
   user: null,
   accessToken: null,
+  leetcodeData: null,
   loading: true,
+
+  // Helper function to check if LeetCode cookie is expired
+  isLeetCodeCookieExpired: () => {
+    const { leetcodeData } = useAuthStore.getState();
+    if (!leetcodeData?.expires) return true;
+
+    const expiryDate = new Date(leetcodeData.expires);
+    const now = new Date();
+    return now >= expiryDate;
+  },
 
   // Initialize auth listener - call this once in App.jsx
   initAuth: () => {
@@ -13,6 +24,14 @@ const useAuthStore = create((set) => ({
       set({
         user: session?.user || null,
         accessToken: session?.access_token || null,
+        leetcodeData: session?.user?.user_metadata?.leetcode_cookie
+          ? {
+              cookie: session.user.user_metadata.leetcode_cookie,
+              expires: session.user.user_metadata.leetcode_cookie_expires,
+              username: session.user.user_metadata.leetcode_username,
+              lastUpdate: session.user.user_metadata.last_cookie_update,
+            }
+          : null,
         loading: false,
       });
     });
@@ -23,6 +42,14 @@ const useAuthStore = create((set) => ({
       set({
         user: session?.user || null,
         accessToken: session?.access_token || null,
+        leetcodeData: session?.user?.user_metadata?.leetcode_cookie
+          ? {
+              cookie: session.user.user_metadata.leetcode_cookie,
+              expires: session.user.user_metadata.leetcode_cookie_expires,
+              username: session.user.user_metadata.leetcode_username,
+              lastUpdate: session.user.user_metadata.last_cookie_update,
+            }
+          : null,
         loading: false,
       });
     });

@@ -8,7 +8,12 @@ import {
 import useAuthStore from "./store/authStore";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
+import Problems from "./pages/Problems";
+import Flashcards from "./pages/Flashcards";
+import Plan from "./pages/Plan";
+import Mock from "./pages/Mock";
+import Settings from "./pages/Settings";
 
 function App() {
   const { user, loading } = useAuthStore();
@@ -33,7 +38,7 @@ function App() {
           path="/"
           element={
             user ? (
-              <Navigate to="/home" replace />
+              <Navigate to="/dashboard" replace />
             ) : (
               <Navigate to="/login" replace />
             )
@@ -41,15 +46,35 @@ function App() {
         />
         <Route
           path="/login"
-          element={user ? <Navigate to="/home" replace /> : <Login />} //if user is logged in, redirect to home
+          element={user ? <Navigate to="/dashboard" replace /> : <Login />} //if user is logged in, redirect to/dashboard
         />
         <Route
           path="/signup"
-          element={user ? <Navigate to="/home" replace /> : <Signup />} //if user is logged in, redirect to home
+          element={user ? <Navigate to="/dashboard" replace /> : <Signup />} //if user is logged in, redirect to/dashboard
         />
         <Route
-          path="/home"
-          element={user ? <Home /> : <Navigate to="/login" replace />} //if user is not logged in, redirect to login
+          path="/dashboard"
+          element={user ? <Dashboard /> : <Navigate to="/login" replace />} //if user is not logged in, redirect to login
+        />
+        <Route
+          path="/problems"
+          element={user ? <Problems /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/flashcards"
+          element={user ? <Flashcards /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/plan"
+          element={user ? <Plan /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/mock"
+          element={user ? <Mock /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/settings"
+          element={user ? <Settings /> : <Navigate to="/login" replace />}
         />
       </Routes>
     </Router>

@@ -49,7 +49,12 @@ async function getLeetCodeCookie() {
 
     if (cookie) {
       console.log("✅ Found LeetCode session cookie");
-      return cookie.value;
+      return {
+        value: cookie.value,
+        expires: cookie.expirationDate
+          ? new Date(cookie.expirationDate * 1000).toISOString()
+          : null,
+      };
     } else {
       throw new Error(
         "No LeetCode session found. Please log in to LeetCode first."

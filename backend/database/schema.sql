@@ -66,7 +66,7 @@ CREATE TABLE flashcards (
   source TEXT DEFAULT 'manual', -- 'manual', 'mock_session', 'ai_generated'
   source_id UUID, -- References mock_sessions.id if from mock
   repetition_count INTEGER DEFAULT 0,
-  ease_factor REAL DEFAULT 2.5, -- For spaced repetition algorithm
+  known_factor REAL DEFAULT 2.5, -- For spaced repetition algorithm
   next_review_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

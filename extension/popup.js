@@ -22,8 +22,9 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
       if (response.success) {
-        const cookie = response.cookie;
+        const cookieData = response.cookie;
         console.log("✅ Got cookie from background");
+        console.log("Cookie expires:", cookieData.expires);
 
         //----------------------------------------------
 
@@ -31,23 +32,38 @@ document.addEventListener("DOMContentLoaded", function () {
         showStatus("Getting user info...", "loading");
         const userResponse = await chrome.runtime.sendMessage({
           type: "GET_USER_INFO",
-          cookie: cookie,
+          cookie: cookieData.value,
         });
 
         if (userResponse.success) {
           const userInfo = userResponse.userInfo;
           console.log("✅ Got user info:", userInfo);
-          showStatus(`✅ Synced for user: ${userInfo.username}`, "success");
 
-          // TODO: Add API call to send data to backend
-          // await fetch('http://localhost:3000/api/sync-leetcode', {
-          //   method: 'POST',
-          //   headers: { 'Content-Type': 'application/json' },
-          //   body: JSON.stringify({
-          //     cookie: cookie,
-          //     username: userInfo.username
-          //   })
-          // });
+          // Show syncing status instead of success
+          showStatus("🔄 Syncing to backend...", "loading");
+
+          // API call to send data to backend
+          const syncResponse = await fetch(
+            "http://localhost:4000/api/auth/sync-leetcode",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                cookie: cookieData,
+                username: userInfo.username,
+              }),
+            }
+          );
+          const syncData = await syncResponse.json();
+          console.log("syncData", syncData);
+          if (syncData.success) {
+            showStatus(
+              `✅ Synced data to backend for ${syncData.username}`,
+              "success"
+            );
+          } else {
+            showStatus(`❌ Sync failed: ${syncData.error}`, "error");
+          }
         } else {
           console.log("⚠️ Could not get user info:", userResponse.error);
           showStatus("✅ Cookie retrieved (no user info)", "success");
