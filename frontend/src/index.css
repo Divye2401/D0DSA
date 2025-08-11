@@ -1,0 +1,161 @@
+@import "tailwindcss";
+
+/* LeetCode-inspired theme */
+@theme {
+  /* Colors - matching LeetCode's palette */
+  --color-primary: #ffa116; /* LeetCode orange */
+  --color-success: #00b8a3; /* Easy green */
+  --color-warning: #ffb800; /* Medium yellow */
+  --color-error: #ff375f; /* Hard red */
+
+  --color-dark: #0a0a0a; /* Dark background */
+  --color-gray-900: #1a1a1a; /* Card background */
+  --color-gray-800: #2d2d2d; /* Border color */
+  --color-gray-700: #3c3c3c; /* Hover states */
+  --color-gray-300: #a0a0a0; /* Text secondary */
+  --color-gray-100: #f0f0f0; /* Text primary */
+
+  /* Fonts - LeetCode style */
+  --font-family-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --font-family-mono: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  --font-family-display: "Inter", sans-serif;
+
+  /* Custom font sizes (avoiding conflicts with built-in Tailwind) */
+  --font-size-3xl: 1.875rem; /* 30px - for big headings */
+  --font-size-4xl: 2.25rem; /* 36px - for hero text */
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+}
+
+/* Custom utilities for LeetCode-style components */
+@layer utilities {
+  .difficulty-easy {
+    @apply text-success font-medium;
+  }
+
+  .difficulty-medium {
+    @apply text-warning font-medium;
+  }
+
+  .difficulty-hard {
+    @apply text-error font-medium;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white px-4 py-2 rounded-lg hover:opacity-90 font-medium;
+  }
+
+  .card-dark {
+    @apply bg-gray-900 border border-gray-800 rounded-xl p-4;
+  }
+
+  /* Login/Signup inputs - fancy effects */
+  .input-base {
+    @apply w-full px-4 py-4 bg-gray-800/50 border border-gray-600/50 rounded-xl 
+           text-gray-100 placeholder-gray-500 
+           focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50
+           transition-all duration-300 backdrop-blur-sm;
+  }
+
+  /* Main app inputs - performance focused */
+  .input-simple {
+    @apply w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg 
+           text-gray-100 placeholder-gray-400 
+           focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500
+           transition-colors duration-200;
+  }
+
+  .input-error {
+    @apply border-red-500/50 focus:ring-red-500/50 focus:border-red-500/50;
+  }
+
+  .error-text {
+    @apply text-red-400 text-sm mt-1;
+  }
+
+  /* Login/Signup buttons - fancy effects */
+  .button-base {
+    @apply w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 
+           text-white font-semibold py-4 px-6 rounded-xl shadow-lg shadow-orange-500/25
+           transition-all duration-300 transform hover:scale-[1.02] hover:shadow-orange-500/40
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
+  }
+
+  /* Main app buttons - performance focused */
+  .button-simple {
+    @apply bg-orange-500 hover:bg-orange-600 text-white font-medium 
+           py-2 px-4 rounded-lg transition-colors duration-200
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+}
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}

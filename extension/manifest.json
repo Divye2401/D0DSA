@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "DSA Prep - LeetCode Sync",
+  "version": "1.0",
+  "description": "Automatically sync your LeetCode progress with DSA Prep App",
+
+  "permissions": ["cookies", "activeTab"],
+
+  "host_permissions": ["https://leetcode.com/*"],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "DSA Prep Sync"
+  }
+}

@@ -1,0 +1,8 @@
+Give brief points as to whats about to be done first.
+Consider me like a junior dev.
+Dont write overly complex code.
+Dont edit multiple files at once wihotut referring to point 1.
+For any package installations, let me run them
+While desiging a component UI, give me 2-3 points of how u think about its strcuture before building it.
+
+RESET means u can write multiple files at once. (Cancels point 4)

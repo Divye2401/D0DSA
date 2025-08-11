@@ -1,0 +1,389 @@
+8/2/25, 4:16 PM                                                    DSA prep app plan
+
+
+  Here's the Final Frozen Plan – Supabase Edition (Fully Enhanced & Detailed) with all requested
+  sections included.
+  I've used your provided detailed version (kept wording intact) and just adapted it to Supabase where
+  necessary.
+
+
+
+
+  🚀 Final Frozen Plan (With Detailed Feature Explanations &
+  LeetCode Integration + Supabase)
+
+
+  📌 1️⃣ Tech Stack (Frozen)
+  Layer                         Choice                                 Reason
+
+  Frontend                      React (Vite) + TailwindCSS +           Fast, modular, reusable components,
+                                Zustand / React Query                  supports dynamic UI updates
+
+
+  Backend                       Node.js (Express)                      Lightweight, easy to build REST APIs,
+                                                                       async-friendly for AI and GraphQL calls
+
+
+  Database                      Supabase (PostgreSQL + Auth +          Managed Postgres DB, built-in
+                                Realtime)                              authentication, instant APIs, real-time
+                                                                       data sync
+
+
+  Auth                          Supabase Auth (JWT-based               Works seamlessly across web app and
+                                login/signup)                          browser extension
+
+
+  AI Layer                      OpenAI GPT-4o API                      Used for recommendations, plan
+                                                                       generation, mock interviewer,
+                                                                       flashcards
+
+
+  Deployment                    Vercel (frontend), Render/Fly.io       Quick deployments, scalable for future
+                                (backend)                              traffic
+
+
+  External APIs                 LeetCode GraphQL API (manual           Fetches solved problems list and stats
+                                username now → later auto-sync)        dynamically
+
+
+  Future Add-ons                WebSocket for real-time mocks,         To improve UX later
+                                PDF generation
+
+
+
+
+https://chatgpt.com/c/688e448c-c8d8-832d-84d3-62fd8f2f011d                                                       1/8
+8/2/25, 4:16 PM                                               DSA prep app plan
+
+  📌 2️⃣ Features (Detailed + Explained)
+  (Same as your detailed version, now with Supabase as DB layer)
+
+
+
+
+  🖥 Screen 1 – AI Analytics Dashboard (Guidance Hub)
+  🎯 Purpose:
+  Central hub showing your DSA progress:
+         How many problems you’ve solved
+         Which topics are weak
+         Daily tasks from your plan
+         Activity streak
+
+
+
+  🔹 Features Explained:
+    1. Topic Mastery Bars
+                  Shows percentage accuracy per topic (e.g., Arrays: 25%, Graphs: 10%).
+                  Data Source:
+                       /leetcode-all-data : total problems solved (easy/medium/hard).
+                       /leetcode-solved-problems : last solved problems list.
+                      Mapped via problem tags → topic accuracy.
+                  Stored in Supabase: user_stats table with JSON field topic_accuracy .
+
+
+
+    2. Streak Heatmap
+                  Shows which days you solved problems (like GitHub commits).
+                  Data: Solved problem timestamps → aggregated per day.
+                  Stored in Supabase ( user_stats.streak_data ) → displayed as grid chart.
+
+
+
+    3. AI Insights
+                  GPT reads your stats and generates a simple suggestion:
+
+                    You solved only 2/15 Graph problems.
+                    Try focusing on BFS/DFS next.
+
+
+                  Personalized, not static tips.
+
+
+
+
+https://chatgpt.com/c/688e448c-c8d8-832d-84d3-62fd8f2f011d                                   2/8
+8/2/25, 4:16 PM                                                 DSA prep app plan
+
+    4. Today’s Tasks Card
+                  Pulled directly from Screen 4 (Daily Plan).
+                  Clickable → navigate to Problems, Flashcards, or Mock.
+
+
+
+  🔧 Build Steps:
+         Backend: /api/stats → fetch stats → aggregate per topic → save in Supabase.
+         AI: Reads solved data → generates insight text.
+         Frontend: Displays progress bars, heatmap, task card.
+
+
+
+
+  🖥 Screen 2 – AI Problem Recommendations (Guidance → Practice)
+  🎯 Purpose: Suggest next best problems dynamically.
+
+
+  🔹 Features Explained:
+         Dynamic Priority Queue: Combines:
+                  Weak topics (low accuracy %).
+                  High-frequency interview problems (static dataset).
+                  Excludes solved problems from solved_problems table in Supabase.
+         Problem Cards:
+
+            [Urgent] Minimum Window Substring
+            Reason: Weakest topic (Strings)
+            Difficulty: Hard
+
+
+         Filters: Topic, company, difficulty.
+         Click Problem: Opens official LeetCode link.
+
+
+
+  🔧 Build Steps:
+         Backend: /api/recommendations → AI prompt → fetch unsolved problems.
+         Supabase: Keeps solved problems list.
+         Frontend: Renders problem cards with filters.
+
+
+
+
+  🖥 Screen 3 – AI Flashcard Generator (Practice)
+  🎯 Purpose: Revise mistakes and theory quickly via flashcards.
+https://chatgpt.com/c/688e448c-c8d8-832d-84d3-62fd8f2f011d                             3/8
+8/2/25, 4:16 PM                                                DSA prep app plan
+
+
+
+
+  🔹 Features Explained:
+         Flashcards created from:
+                  Mock mistakes → AI converts to Q&A.
+                  User notes → AI converts to Q&A.
+         Flip cards with ✅/❌ marking → repetition algorithm decides next review.
+         Export PDF for offline revision.
+  🔧 Build Steps:
+          /mock-session output → AI creates flashcards → stored in Supabase flashcards .
+         Frontend: Flip-card UI + export button.
+
+
+
+
+  🖥 Screen 4 – AI Daily Plan (Guidance)
+  🎯 Purpose: Generate personalized multi-day plan.
+
+
+  🔹 Features Explained:
+         Inputs: Company, prep days, weak topics, time per day.
+         AI output example:
+
+            Day 1:
+            - Problems: 2 Easy Arrays
+            - Theory: Sliding Window
+            - Mock: Medium Two Pointers
+
+
+         Request Change → regenerates one day's plan dynamically.
+         Supabase table plans stores structured plan JSON.
+
+
+
+
+  🖥 Screen 5 – Mock Interview Session (Practice)
+  🎯 Purpose: AI simulates real interviewer.
+
+
+  🔹 Features Explained:
+         Pre-start: Topic, difficulty, company style, timer.
+         AI Chat session:
+
+
+
+
+https://chatgpt.com/c/688e448c-c8d8-832d-84d3-62fd8f2f011d                                 4/8
+8/2/25, 4:16 PM                                                      DSA prep app plan
+
+
+            AI: Solve this medium sliding window problem.
+            User: (solution)
+            AI: Time complexity? Edge cases?
+
+
+         Scorecard + missed concepts → Flashcards auto-generated → saved in Supabase.
+
+
+
+  ✅ LeetCode Data → Drives Everything:
+         Stats → Dashboard accuracy bars.
+         Solved list → Avoid duplicates.
+         Timestamps → Streak heatmap.
+         Tags → Topic weaknesses.
+
+
+
+
+  📌 3️⃣ Pages & Component Blueprint
+  Page                                        Components
+
+  Dashboard                                    <TopicAccuracyChart/> , <StreakHeatmap/> , <TodayTasksCard/> , <AIInsig
+
+
+  Problems                                     <ProblemCard/> , <FilterBar/> , <WhyTooltip/>
+
+
+  Flashcards                                   <Flashcard/> , <DeckControls/> , <ExportPDFButton/>
+
+
+  Plan                                         <PlanForm/> , <PlanDay/> , <RequestChangeModal/>
+
+
+  Mock                                         <MockChat/> , <CodeEditor/> , <Scorecard/>
+
+
+
+
+  📌 4️⃣ Data Flow
+     [Frontend - React]
+                  ↓
+     (REST API Calls)
+                  ↓
+     [Backend - Express]
+                  ↓
+     [Supabase Postgres DB]
+                  ↔ Fetch LeetCode GraphQL
+
+
+https://chatgpt.com/c/688e448c-c8d8-832d-84d3-62fd8f2f011d                                                               5/8
+8/2/25, 4:16 PM                                                        DSA prep app plan
+
+                  ↓
+     [OpenAI GPT-4o]
+
+
+
+         Stats → Saved in Supabase → AI reads → Dashboard updates.
+         Mock → Chat stored → AI creates flashcards → saved → Flashcard screen updates.
+         Plan → AI generates schedule → Supabase → Dashboard tasks updated.
+
+
+
+
+  📌 5️⃣ AI Integration Details
+  Feature                                 Prompt Example
+
+  Recommendations                         "Given solved problems and topic accuracy, recommend 10 new
+                                          LeetCode problems with reason and difficulty."
+
+
+  Daily Plan                              "Generate a 5-day DSA prep plan for weak topics=[DP, Graph], 3h/day,
+                                          target=Amazon."
+
+
+  Plan Modify                             "Modify this plan replacing Hard DP with Medium Arrays, keep other
+                                          days same."
+
+
+  Mock Interview                          "Act as an interviewer, ask one Medium Sliding Window problem,
+                                          follow up with complexity and edge cases."
+
+
+  Flashcards                              "From this transcript, create concise Q&A flashcards about missed
+                                          concepts with topic tags."
+
+
+
+
+  📌 6️⃣ UI/UX Wireframe (Textual)
+
+
+  Dashboard
+
+     ----------------------------------------------------
+     | Topic Accuracy            |   Streak Heatmap                          |
+     |-----------------|-------------------------------|
+     | █████ 30%                 |   🟩🟩⬜⬜🟩🟩⬜                                          |
+     ----------------------------------------------------
+     | AI Insight: "Focus on Graph problems next."                           |
+
+
+https://chatgpt.com/c/688e448c-c8d8-832d-84d3-62fd8f2f011d                                                       6/8
+8/2/25, 4:16 PM                                              DSA prep app plan
+
+     ----------------------------------------------------
+     | Today's Plan:                                               |
+     | - 2 Problems (Arrays, Graph)                                |
+     | - 5 Flashcards                                              |
+     | - Mock: Sliding Window                                      |
+     ----------------------------------------------------
+
+
+
+
+  Problems
+
+     ----------------------------------------------------
+     | Filters: [Topic ▼] [Difficulty ▼] [Company ▼]               |
+     ----------------------------------------------------
+     | [Urgent] Two Sum – Arrays                                   |
+     | Reason: Low success rate (20%)                              |
+     | Difficulty: Easy             [Open in LeetCode]             |
+     ----------------------------------------------------
+     | [High Impact] Merge Intervals – Greedy                      |
+     ----------------------------------------------------
+
+
+
+
+  Flashcards
+
+     ----------------------------------------------------
+     | Q: What's the complexity of Sliding Window?                 |
+     |--------------------------------------------------|
+     | A: O(N)                                                     |
+     ----------------------------------------------------
+     | [✅ Known]           [❌ Unknown]                                 |
+     ----------------------------------------------------
+     | [Export PDF]                                                |
+     ----------------------------------------------------
+
+
+
+
+  Daily Plan
+
+
+https://chatgpt.com/c/688e448c-c8d8-832d-84d3-62fd8f2f011d                       7/8
+8/2/25, 4:16 PM                                              DSA prep app plan
+
+
+     ----------------------------------------------------
+     | Inputs: [Company][Days][Topics][Time per day]                 |
+     ----------------------------------------------------
+     | Day 1:                                                      |
+     | - 2 Easy Arrays                                             |
+     | - Theory: Sliding Window                                  |
+     | - Mock: Medium Two Pointers                               |
+     ----------------------------------------------------
+     | [Modify Plan]                                               |
+     ----------------------------------------------------
+
+
+
+
+  Mock Session
+
+     ----------------------------------------------------
+     | AI: Solve this medium sliding window problem.               |
+     ----------------------------------------------------
+     | [Code Editor Area]                                          |
+     ----------------------------------------------------
+     | AI: What's the time complexity?                           |
+     ----------------------------------------------------
+     | Scorecard:        ✅    Good approach, ⚠ Missed edge case          |
+     | Next: Minimum Window Substring                              |
+     ----------------------------------------------------
+
+
+
+
+https://chatgpt.com/c/688e448c-c8d8-832d-84d3-62fd8f2f011d                       8/8
+
