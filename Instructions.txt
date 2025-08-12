@@ -1,4 +1,5 @@
 Give brief points as to whats about to be done first.
+Always have a discussion with me first, start writing code onlt when agreed 
 Consider me like a junior dev.
 Dont write overly complex code.
 Dont edit multiple files at once wihotut referring to point 1.

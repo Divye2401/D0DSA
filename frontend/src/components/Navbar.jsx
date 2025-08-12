@@ -1,9 +1,21 @@
 import { Link, useLocation } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import useAuthStore from "../store/authStore";
 
 export default function Navbar() {
   const location = useLocation();
-  const { logout } = useAuthStore();
+  const { user, logout, isLeetCodeCookieExpired } = useAuthStore();
+  const queryClient = useQueryClient();
+
+  const handleSyncData = () => {
+    if (!user?.id || isLeetCodeCookieExpired()) {
+      toast.error("Please sync your LeetCode cookie first");
+      return;
+    }
+
+    queryClient.invalidateQueries(["syncLeetCode", user.id]);
+  };
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: "📊", path: "/dashboard" },
@@ -57,6 +69,15 @@ export default function Navbar() {
 
           {/* User Menu */}
           <div className="flex items-center gap-3">
+            {/* Sync button */}
+            <button
+              onClick={handleSyncData}
+              className="px-4 py-2 rounded-xl text-sm font-medium text-gray-300 hover:text-white bg-gray-800/50 hover:bg-primary/80 border border-gray-700/50 hover:border-primary/50 transition-all duration-200"
+              title="Sync LeetCode Data"
+            >
+              🔄 Sync
+            </button>
+
             {/* Mobile menu button */}
             <button className="md:hidden text-gray-300 hover:text-white p-2 rounded-lg hover:bg-gray-800/50 transition-colors">
               <span className="text-xl">☰</span>

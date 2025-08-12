@@ -1,13 +1,66 @@
 import useAuthStore from "../store/authStore";
 import supabase from "../utils/supabaseclient";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import { syncLeetCodeData } from "../utils/useSyncLeetCode";
+import { fetchDashboardStats } from "../utils/dashboardAPI";
+import StatsCards from "../components/dashboard/StatsCards";
+import RecentActivity from "../components/dashboard/RecentActivity";
+import TopicMastery from "../components/dashboard/TopicMastery";
+import StreakHeatmap from "../components/dashboard/StreakHeatmap";
+import ActivityCards from "../components/dashboard/ActivityCards";
+import AIRecommendations from "../components/dashboard/AIRecommendations";
+import TodaysPlan from "../components/dashboard/TodaysPlan";
 import Navbar from "../components/Navbar";
 
 export default function Dashboard() {
-  const { user, leetcodeData, isLeetCodeCookieExpired } = useAuthStore();
+  const { user, isLeetCodeCookieExpired } = useAuthStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  console.log(leetcodeData);
+  // Auto-sync LeetCode data on page load
+  // eslint-disable-next-line no-unused-vars
+  const { data, isLoading, error } = useQuery({
+    // these are all States!!!
+    queryKey: ["syncLeetCode", user?.id],
+    queryFn: async () => {
+      toast.loading("Syncing LeetCode data...", {
+        id: "sync-toast",
+        duration: Infinity, // Never auto-dismiss
+      });
+
+      try {
+        const result = await syncLeetCodeData(user?.id);
+        toast.success("Data synced successfully!", {
+          id: "sync-toast",
+          duration: 3000,
+        });
+        return result;
+      } catch (error) {
+        toast.error(`Sync failed: ${error.message}`, {
+          id: "sync-toast",
+          duration: 3000,
+        });
+        throw error; // Re-throw for React Query
+      }
+    },
+    enabled: !!user?.id && !isLeetCodeCookieExpired(),
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  // Fetch dashboard stats (only after sync is complete)
+  const { data: dashboardData } = useQuery({
+    queryKey: ["dashboardStats", user?.id],
+    queryFn: () => fetchDashboardStats(user?.id),
+    enabled: !!user?.id && !isLoading, // Only run after sync is complete
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Log dashboard data to console
+  console.log("Sync Loading:", isLoading);
+  console.log("📊 Dashboard Data:", dashboardData);
+
+  // Handle toast notifications based on sync states
 
   const checkForNewCookie = async () => {
     setIsRefreshing(true);
@@ -65,118 +118,45 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Top Row: Topic Accuracy + Streak Heatmap */}
-        <div className="grid md:grid-cols-2 gap-6 mb-6">
-          {/* Topic Accuracy */}
-          <div className="card-base">
-            <h2 className="text-xl font-semibold text-white mb-4">
-              Topic Mastery
-            </h2>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Arrays</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 bg-gray-700 rounded-full h-2">
-                    <div
-                      className="bg-green-500 h-2 rounded-full"
-                      style={{ width: "75%" }}
-                    ></div>
-                  </div>
-                  <span className="difficulty-easy text-sm">75%</span>
-                </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Graphs</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 bg-gray-700 rounded-full h-2">
-                    <div
-                      className="bg-red-500 h-2 rounded-full"
-                      style={{ width: "25%" }}
-                    ></div>
-                  </div>
-                  <span className="difficulty-hard text-sm">25%</span>
-                </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-300">Dynamic Programming</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 bg-gray-700 rounded-full h-2">
-                    <div
-                      className="bg-yellow-500 h-2 rounded-full"
-                      style={{ width: "40%" }}
-                    ></div>
-                  </div>
-                  <span className="difficulty-medium text-sm">40%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Streak Heatmap */}
-          <div className="card-base">
-            <h2 className="text-xl font-semibold text-white mb-4">
-              7-Day Streak
-            </h2>
-            <div className="flex gap-2 justify-center">
-              <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center text-xs text-white font-medium">
-                3
-              </div>
-              <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center text-xs text-white font-medium">
-                2
-              </div>
-              <div className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center text-xs text-gray-400">
-                0
-              </div>
-              <div className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center text-xs text-gray-400">
-                0
-              </div>
-              <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center text-xs text-white font-medium">
-                1
-              </div>
-              <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center text-xs text-white font-medium">
-                4
-              </div>
-              <div className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center text-xs text-gray-400">
-                0
-              </div>
-            </div>
-            <p className="text-center text-gray-400 text-sm mt-2">
-              Last 7 days
-            </p>
-          </div>
+        {/* Stats Cards */}
+        <div className="mb-8">
+          <StatsCards stats={dashboardData?.data?.stats} />
         </div>
 
-        {/* AI Insight */}
-        <div className="card-base mb-6">
-          <h2 className="text-lg font-semibold text-white mb-2">
-            🤖 AI Insight
-          </h2>
-          <p className="text-primary text-lg">
-            "Focus on Graph problems next. Your success rate is low (25%). Try
-            BFS/DFS fundamentals."
-          </p>
+        {/* Recent Activity */}
+        <div className="mb-8">
+          <RecentActivity problems={dashboardData?.data?.recentActivity} />
+        </div>
+
+        {/* Top Row: Topic Accuracy + Streak Heatmap */}
+        <div className="grid md:grid-cols-2 gap-6 mb-6">
+          {/* Topic Mastery */}
+          <TopicMastery
+            mastery={dashboardData?.data?.topicMastery}
+            accuracy={dashboardData?.data?.topicAccuracy}
+            least={{
+              mastery: dashboardData?.data?.leastMastery,
+              accuracy: dashboardData?.data?.leastAccuracy,
+            }}
+          />
+
+          {/* Streak Heatmap */}
+          <StreakHeatmap
+            streakData={dashboardData?.data?.streakData}
+            activityStats={dashboardData?.data?.activityStats}
+          />
+        </div>
+
+        {/* AI Recommendations */}
+        <div className="mb-6">
+          <AIRecommendations
+            recommendations={dashboardData?.data?.recommendations}
+            isLoading={isLoading}
+          />
         </div>
 
         {/* Today's Plan */}
-        <div className="card-base">
-          <h2 className="text-xl font-semibold text-white mb-4">
-            📋 Today's Plan
-          </h2>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <span className="text-blue-400">📝</span>
-              <span className="text-gray-300">2 Problems (Arrays, Graph)</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-green-400">🗂️</span>
-              <span className="text-gray-300">5 Flashcards</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-purple-400">🎯</span>
-              <span className="text-gray-300">Mock: Sliding Window</span>
-            </div>
-          </div>
-        </div>
+        <TodaysPlan planData={dashboardData?.data?.todaysPlan} />
       </div>
     </div>
   );

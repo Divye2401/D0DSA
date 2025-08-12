@@ -6,41 +6,59 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 1. User Profiles (extends Supabase auth.users)
 CREATE TABLE user_profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  leetcode_username TEXT,
-  leetcode_session_cookie TEXT, -- Encrypted storage
-  target_companies TEXT[] DEFAULT '{}',
-  daily_study_hours INTEGER DEFAULT 2,
-  preferred_topics TEXT[] DEFAULT '{}',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+  id UUID NOT NULL,
+  leetcode_username TEXT NULL,
+  leetcode_session_cookie TEXT NULL,
+  target_companies TEXT[] NULL DEFAULT '{}'::TEXT[],
+  daily_study_hours INTEGER NULL DEFAULT 2,
+  preferred_topics TEXT[] NULL DEFAULT '{}'::TEXT[],
+  created_at TIMESTAMP WITH TIME ZONE NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE NULL DEFAULT NOW(),
+  CONSTRAINT user_profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT user_profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users (id) ON DELETE CASCADE
+) TABLESPACE pg_default;
 
 
--- 3. LeetCode Stats (Cached user stats)
+-- 2. LeetCode Stats (Cached user stats)
 CREATE TABLE leetcode_stats (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE,
-  total_solved INTEGER DEFAULT 0,
-  easy_solved INTEGER DEFAULT 0,
-  medium_solved INTEGER DEFAULT 0,
-  hard_solved INTEGER DEFAULT 0,
-  topic_accuracy JSONB DEFAULT '{}', -- {"Arrays": 0.75, "Graphs": 0.25}
-  streak_data JSONB DEFAULT '{}', -- {"2024-01-15": 3, "2024-01-16": 2}
-  last_synced TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(user_id)
-);
+  id UUID NOT NULL DEFAULT extensions.uuid_generate_v4(),
+  user_id UUID NULL,
+  total_solved INTEGER NULL DEFAULT 0,
+  easy_solved INTEGER NULL DEFAULT 0,
+  medium_solved INTEGER NULL DEFAULT 0,
+  hard_solved INTEGER NULL DEFAULT 0,
+  topic_accuracy JSONB NULL DEFAULT '{}'::JSONB,
+  last_synced TIMESTAMP WITH TIME ZONE NULL DEFAULT NOW(),
+  created_at TIMESTAMP WITH TIME ZONE NULL DEFAULT NOW(),
+  topic_mastery JSONB NULL DEFAULT '{}'::JSONB,
+  total_accuracy REAL NULL DEFAULT 0,
+  easy_accuracy REAL NULL DEFAULT 0,
+  medium_accuracy REAL NULL DEFAULT 0,
+  hard_accuracy REAL NULL DEFAULT 0,
+  submission_calendar TEXT NULL,
+  CONSTRAINT leetcode_stats_pkey PRIMARY KEY (id),
+  CONSTRAINT leetcode_stats_user_id_key UNIQUE (user_id),
+  CONSTRAINT leetcode_stats_user_id_fkey FOREIGN KEY (user_id) REFERENCES user_profiles (id) ON DELETE CASCADE
+) TABLESPACE pg_default;
 
--- 4. Solved Problems (User's solved problems)
+-- 3. Solved Problems (User's solved problems)
 CREATE TABLE solved_problems (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE,
-  leetcode_problem_id INTEGER REFERENCES leetcode_problems(id),
-  solved_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(user_id, leetcode_problem_id)
-);
+  id UUID NOT NULL DEFAULT extensions.uuid_generate_v4(),
+  user_id UUID NULL,
+  problem_id INTEGER NULL,
+  solved_at TIMESTAMP WITH TIME ZONE NULL DEFAULT NOW(),
+  created_at TIMESTAMP WITH TIME ZONE NULL DEFAULT NOW(),
+  submission_status TEXT NULL DEFAULT 'Accepted'::TEXT,
+  problem_name TEXT NULL,
+  CONSTRAINT solved_problems_pkey PRIMARY KEY (id),
+  CONSTRAINT solved_problems_leetcode_problem_id_fkey FOREIGN KEY (problem_id) REFERENCES leetcode_problems (id),
+  CONSTRAINT solved_problems_user_id_fkey FOREIGN KEY (user_id) REFERENCES user_profiles (id) ON DELETE CASCADE,
+  CONSTRAINT solved_problems_submission_status_check CHECK (
+    (
+      submission_status = ANY (ARRAY['Accepted'::TEXT, 'Not Accepted'::TEXT])
+    )
+  )
+) TABLESPACE pg_default;
 
 -- 5. Daily Plans (AI-generated study plans)
 CREATE TABLE daily_plans (
@@ -86,14 +104,14 @@ CREATE TABLE mock_sessions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Indexes for better performance
-CREATE INDEX idx_leetcode_problems_difficulty ON leetcode_problems(difficulty);
-CREATE INDEX idx_leetcode_problems_topics ON leetcode_problems USING GIN(topics);
-CREATE INDEX idx_leetcode_problems_companies ON leetcode_problems USING GIN(companies);
-CREATE INDEX idx_leetcode_problems_frequency ON leetcode_problems(frequency_score DESC);
+-- Triggers for updated_at
+CREATE TRIGGER update_user_profiles_updated_at BEFORE
+UPDATE ON user_profiles FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column ();
 
-CREATE INDEX idx_solved_problems_user_id ON solved_problems(user_id);
-CREATE INDEX idx_solved_problems_solved_date ON solved_problems(solved_date DESC);
+-- Indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_solved_problems_user_id ON public.solved_problems USING btree (user_id) TABLESPACE pg_default;
+CREATE INDEX IF NOT EXISTS idx_solved_problems_solved_date ON public.solved_problems USING btree (solved_at DESC) TABLESPACE pg_default;
 
 CREATE INDEX idx_flashcards_user_id ON flashcards(user_id);
 CREATE INDEX idx_flashcards_next_review ON flashcards(next_review_date);
@@ -142,11 +160,4 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Triggers for updated_at
-CREATE TRIGGER update_user_profiles_updated_at 
-  BEFORE UPDATE ON user_profiles 
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_leetcode_problems_updated_at 
-  BEFORE UPDATE ON leetcode_problems 
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
