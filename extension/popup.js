@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
           // API call to send data to backend
           const syncResponse = await fetch(
-            "http://localhost:4000/api/auth/sync-leetcode",
+            "http://localhost:4000/api/auth/sync-leetcode-token",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },

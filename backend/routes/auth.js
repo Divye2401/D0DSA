@@ -18,7 +18,7 @@ const supabase = createClient(
 );
 
 // POST /api/auth/sync-leetcode
-authRouter.route("/sync-leetcode").post(syncLeetCodeHandler);
+authRouter.route("/sync-leetcode-token").post(syncLeetCodeHandler);
 
 // POST /api/auth/update-profile
 authRouter.route("/update-profile").post(updateProfileHandler);

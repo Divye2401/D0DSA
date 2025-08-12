@@ -15,7 +15,6 @@ export default function Flashcards() {
       id: 1,
       question: "What's the time complexity of Binary Search?",
       answer: "O(log n) - We eliminate half the search space in each iteration",
-      topic: "Arrays",
       difficulty: "Easy",
       userNotes: "Remember: always divide by 2, that's why it's logarithmic",
     },

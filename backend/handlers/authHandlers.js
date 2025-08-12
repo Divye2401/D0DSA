@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import { encryptCookie } from "../scripts/encypt-decrypt.js";
 
 // Load environment variables
 dotenv.config({ path: "config.env" });
@@ -65,6 +66,24 @@ export const updateProfileHandler = async (req, res) => {
         success: false,
         error: "Failed to update user profile",
       });
+    }
+
+    // Also update user_profiles table
+    const { error: profileError } = await supabase.from("user_profiles").upsert(
+      {
+        id: userId,
+        leetcode_username: newUsername,
+        // If username changed, clear the encrypted cookie
+        leetcode_session_cookie:
+          currentUsername !== newUsername ? null : undefined,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" }
+    );
+
+    if (profileError) {
+      console.error("Profile update error:", profileError);
+      // Don't fail the request, just log the error
     }
 
     res.json({
@@ -143,6 +162,25 @@ export const syncLeetCodeHandler = async (req, res) => {
         success: false,
         error: "Failed to update user metadata",
       });
+    }
+
+    // Encrypt the cookie first
+    const encryptedCookie = await encryptCookie(cookie);
+
+    // Store in user_profiles table (encrypted)
+    const { error: profileError } = await supabase.from("user_profiles").upsert(
+      {
+        id: user.id,
+        leetcode_username: username,
+        leetcode_session_cookie: encryptedCookie,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" }
+    );
+
+    if (profileError) {
+      console.error("Profile update error:", profileError);
+      // Don't fail the request, just log the error
     }
 
     res.json({

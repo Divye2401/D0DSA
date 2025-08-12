@@ -7,6 +7,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import authRouter from "./routes/auth.js";
+import userRouter from "./routes/user.js";
 
 // Load environment variables
 dotenv.config();
@@ -26,6 +27,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRouter);
+app.use("/api/user", userRouter);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
