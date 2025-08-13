@@ -4,7 +4,7 @@ import "./index.css";
 import App from "./App.jsx";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import ToasterProvider from "./components/ToasterProvider";
+import ToasterProvider from "./components/general/ToasterProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {

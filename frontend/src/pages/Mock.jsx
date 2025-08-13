@@ -1,6 +1,6 @@
 import { useState } from "react";
-import Navbar from "../components/Navbar";
-import CustomDropdown from "../components/CustomDropdown";
+import Navbar from "../components/general/Navbar";
+import CustomDropdown from "../components/general/CustomDropdown";
 
 export default function Mock() {
   const [sessionState, setSessionState] = useState("setup");

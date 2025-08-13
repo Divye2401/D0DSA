@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import Navbar from "../components/Navbar";
+import Navbar from "../components/general/Navbar";
 
 export default function Flashcards() {
   const [currentCard, setCurrentCard] = useState(0);

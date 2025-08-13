@@ -69,7 +69,11 @@ export default function CustomDropdown({
               <button
                 key={option.value}
                 type="button"
-                onClick={() => handleSelect(option.value)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSelect(option.value);
+                }}
                 className={`w-full px-3 py-2 text-left hover:bg-gray-700 transition-colors duration-150 ${
                   value === option.value
                     ? "bg-orange-500/20 text-orange-400"

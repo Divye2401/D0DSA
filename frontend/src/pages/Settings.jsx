@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import Navbar from "../components/Navbar";
+import Navbar from "../components/general/Navbar";
 import useAuthStore from "../store/authStore";
 
 export default function Settings() {

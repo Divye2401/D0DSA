@@ -2,56 +2,32 @@ import useAuthStore from "../store/authStore";
 import supabase from "../utils/supabaseclient";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import toast from "react-hot-toast";
-import { syncLeetCodeData } from "../utils/useSyncLeetCode";
+
 import { fetchDashboardStats } from "../utils/dashboardAPI";
+import { useLeetCodeSync } from "../hooks/useLeetCodeSync";
 import StatsCards from "../components/dashboard/StatsCards";
 import RecentActivity from "../components/dashboard/RecentActivity";
 import TopicMastery from "../components/dashboard/TopicMastery";
 import StreakHeatmap from "../components/dashboard/StreakHeatmap";
-import ActivityCards from "../components/dashboard/ActivityCards";
+
 import AIRecommendations from "../components/dashboard/AIRecommendations";
 import TodaysPlan from "../components/dashboard/TodaysPlan";
-import Navbar from "../components/Navbar";
+import Navbar from "../components/general/Navbar";
 
 export default function Dashboard() {
   const { user, isLeetCodeCookieExpired } = useAuthStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Auto-sync LeetCode data on page load
-  // eslint-disable-next-line no-unused-vars
-  const { data, isLoading, error } = useQuery({
-    // these are all States!!!
-    queryKey: ["syncLeetCode", user?.id],
-    queryFn: async () => {
-      toast.loading("Syncing LeetCode data...", {
-        id: "sync-toast",
-        duration: Infinity, // Never auto-dismiss
-      });
-
-      try {
-        const result = await syncLeetCodeData(user?.id);
-        toast.success("Data synced successfully!", {
-          id: "sync-toast",
-          duration: 3000,
-        });
-        return result;
-      } catch (error) {
-        toast.error(`Sync failed: ${error.message}`, {
-          id: "sync-toast",
-          duration: 3000,
-        });
-        throw error; // Re-throw for React Query
-      }
-    },
-    enabled: !!user?.id && !isLeetCodeCookieExpired(),
-    staleTime: 10 * 60 * 1000, // 10 minutes
-  });
+  // Use global sync hook instead of local query
+  const { isLoading } = useLeetCodeSync();
 
   // Fetch dashboard stats (only after sync is complete)
   const { data: dashboardData } = useQuery({
     queryKey: ["dashboardStats", user?.id],
-    queryFn: () => fetchDashboardStats(user?.id),
+    queryFn: () => {
+      console.log("Fetching dashboard stats");
+      return fetchDashboardStats(user?.id);
+    },
     enabled: !!user?.id && !isLoading, // Only run after sync is complete
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -59,8 +35,6 @@ export default function Dashboard() {
   // Log dashboard data to console
   console.log("Sync Loading:", isLoading);
   console.log("📊 Dashboard Data:", dashboardData);
-
-  // Handle toast notifications based on sync states
 
   const checkForNewCookie = async () => {
     setIsRefreshing(true);

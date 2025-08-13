@@ -1,20 +1,15 @@
 import { Link, useLocation } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
-import toast from "react-hot-toast";
-import useAuthStore from "../store/authStore";
+import useAuthStore from "../../store/authStore";
+import { useLeetCodeSync } from "../../hooks/useLeetCodeSync";
+import Spinner from "./Spinner";
 
 export default function Navbar() {
   const location = useLocation();
-  const { user, logout, isLeetCodeCookieExpired } = useAuthStore();
-  const queryClient = useQueryClient();
+  const { logout } = useAuthStore();
+  const { triggerSync, isLoading } = useLeetCodeSync();
 
   const handleSyncData = () => {
-    if (!user?.id || isLeetCodeCookieExpired()) {
-      toast.error("Please sync your LeetCode cookie first");
-      return;
-    }
-
-    queryClient.invalidateQueries(["syncLeetCode", user.id]);
+    triggerSync();
   };
 
   const navItems = [
@@ -72,10 +67,18 @@ export default function Navbar() {
             {/* Sync button */}
             <button
               onClick={handleSyncData}
-              className="px-4 py-2 rounded-xl text-sm font-medium text-gray-300 hover:text-white bg-gray-800/50 hover:bg-primary/80 border border-gray-700/50 hover:border-primary/50 transition-all duration-200"
+              disabled={isLoading}
+              className="px-4 py-2 rounded-xl text-sm font-medium text-gray-300 hover:text-white bg-gray-800/50 hover:bg-primary/80 border border-gray-700/50 hover:border-primary/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Sync LeetCode Data"
             >
-              🔄 Sync
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <Spinner />
+                  <span>Syncing...</span>
+                </div>
+              ) : (
+                <>🔄 Sync</>
+              )}
             </button>
 
             {/* Mobile menu button */}

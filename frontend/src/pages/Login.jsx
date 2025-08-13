@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import supabase from "../utils/supabaseclient";
-import Spinner from "../components/Spinner";
+import Spinner from "../components/general/Spinner";
 
 export default function Login() {
   const [formData, setFormData] = useState({

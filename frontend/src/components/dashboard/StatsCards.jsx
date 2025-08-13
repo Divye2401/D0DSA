@@ -5,7 +5,7 @@ import {
   FaFire,
   FaChartBar,
 } from "react-icons/fa";
-import ProgressBar from "../ProgressBar";
+import ProgressBar from "../general/ProgressBar";
 
 /**
  * StatsCards - Displays main LeetCode statistics using TailwindCSS

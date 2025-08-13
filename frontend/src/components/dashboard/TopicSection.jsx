@@ -1,4 +1,4 @@
-import ProgressBar from "../ProgressBar";
+import ProgressBar from "../general/ProgressBar";
 
 export default function TopicSection({
   title,
