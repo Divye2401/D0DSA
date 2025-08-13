@@ -1,7 +1,19 @@
 import { useState, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Navbar from "../components/general/Navbar";
+import useAuthStore from "../store/authStore";
+import {
+  uploadPDFAndGenerateFlashcards,
+  getUserFlashcards,
+  updateFlashcardProgress,
+} from "../utils/flashcardAPI";
+import { toast } from "react-hot-toast";
+// eslint-disable-next-line no-unused-vars
+import { motion } from "framer-motion";
 
 export default function Flashcards() {
+  const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const [currentCard, setCurrentCard] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
@@ -9,43 +21,36 @@ export default function Flashcards() {
   const [isGenerating, setIsGenerating] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Mock flashcard data - later will come from API
-  const mockFlashcards = [
-    {
-      id: 1,
-      question: "What's the time complexity of Binary Search?",
-      answer: "O(log n) - We eliminate half the search space in each iteration",
-      difficulty: "Easy",
-      userNotes: "Remember: always divide by 2, that's why it's logarithmic",
+  // React Query for flashcards
+  const {
+    data: flashcardsData,
+    isLoading: isLoadingCards,
+    refetch: refetchFlashcards,
+  } = useQuery({
+    queryKey: ["flashcards", user?.id],
+    queryFn: async () => {
+      const result = await getUserFlashcards(user.id);
+      // Add known field to each flashcard when fetching
+      const flashcardsWithKnown = result.flashcards.map((card) => ({
+        ...card,
+        known: null, // null = not answered yet, true = known, false = unknown
+      }));
+      return { flashcards: flashcardsWithKnown };
     },
-    {
-      id: 2,
-      question: "What's the space complexity of DFS on a binary tree?",
-      answer:
-        "O(h) where h is the height of the tree. In worst case O(n) for skewed tree, O(log n) for balanced tree",
-      topic: "Trees",
-      difficulty: "Medium",
-      userNotes: "",
-    },
-    {
-      id: 3,
-      question: "When should you use a HashMap vs TreeMap?",
-      answer:
-        "HashMap: O(1) average operations, unordered. TreeMap: O(log n) operations, maintains sorted order",
-      topic: "Hash Tables",
-      difficulty: "Medium",
-      userNotes: "HashMap for speed, TreeMap for sorted data",
-    },
-  ];
+    enabled: false, // Only fetch manually when user clicks button
+    staleTime: Infinity, // Never consider data stale
+    retry: false,
+  });
 
-  const currentFlashcard = mockFlashcards[currentCard];
+  const flashcards = flashcardsData?.flashcards || [];
+  const currentFlashcard = flashcards[currentCard];
 
   const handleFlip = () => {
     setIsFlipped(!isFlipped);
   };
 
   const handleNext = () => {
-    if (currentCard < mockFlashcards.length - 1) {
+    if (currentCard < flashcards.length - 1) {
       setCurrentCard(currentCard + 1);
       setIsFlipped(false);
     }
@@ -59,54 +64,152 @@ export default function Flashcards() {
   };
 
   const handleMarkKnown = () => {
+    // Update the known field for current flashcard in React Query cache
+    queryClient.setQueryData(["flashcards", user?.id], (oldData) => {
+      if (!oldData) return oldData;
+
+      const updatedFlashcards = oldData.flashcards.map((card, index) =>
+        index === currentCard ? { ...card, known: true } : card
+      );
+
+      return { ...oldData, flashcards: updatedFlashcards };
+    });
+
     console.log("Marked as known:", currentFlashcard.id);
-    // Later: API call to update card status
-    handleNext();
+    toast.success("Marked as known", {
+      id: "mark-known",
+      style: {
+        backgroundColor: "green",
+      },
+    });
   };
 
   const handleMarkUnknown = () => {
+    // Update the known field for current flashcard in React Query cache
+    queryClient.setQueryData(["flashcards", user?.id], (oldData) => {
+      if (!oldData) return oldData;
+      const updatedFlashcards = oldData.flashcards.map((card, index) =>
+        index === currentCard ? { ...card, known: false } : card
+      );
+
+      return { ...oldData, flashcards: updatedFlashcards };
+    });
+
     console.log("Marked as unknown:", currentFlashcard.id);
-    // Later: API call to update card status
-    handleNext();
+    toast.success("Marked as unknown", {
+      id: "mark-unknown",
+      style: {
+        backgroundColor: "red",
+      },
+    });
+  };
+
+  const handleEndRevision = async () => {
+    if (!user?.id) return;
+
+    try {
+      toast.loading("Saving your progress...", { id: "save-progress" });
+
+      // Update progress for all flashcards that were marked (known !== null)
+      const markedCards = flashcards.filter((card) => card.known !== null);
+
+      await updateFlashcardProgress(user.id, markedCards);
+
+      toast.success(`Revision session ended!`, {
+        id: "save-progress",
+      });
+
+      // Clear the session - this will invalidate the query data
+      queryClient.setQueryData(["flashcards", user.id], null);
+      setCurrentCard(0);
+      setIsFlipped(false);
+    } catch (error) {
+      toast.error("Failed to save progress", { id: "save-progress" });
+      console.error("Save progress error:", error);
+    }
   };
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
-    if (
-      file &&
-      (file.type === "application/pdf" ||
-        file.type ===
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-        file.type === "text/plain")
-    ) {
+    if (file && file.type === "application/pdf") {
       setUploadedFile(file);
       console.log("PDF uploaded:", file.name);
     } else {
-      alert("Please upload a PDF, DOCX, or TXT file only");
+      toast.error("Please upload a PDF only");
     }
   };
 
   const handleGenerateFlashcards = async () => {
     if (!uploadedFile) {
-      alert("Please upload a PDF first");
+      toast.error("Please upload a PDF first");
+      return;
+    }
+
+    if (!user?.id) {
+      toast.error("Please log in to generate flashcards");
       return;
     }
 
     setIsGenerating(true);
-    console.log("Generating flashcards from PDF:", uploadedFile.name);
 
-    // Later: API call to process PDF and generate flashcards
-    setTimeout(() => {
-      setIsGenerating(false);
+    try {
+      toast.loading("Processing PDF and generating flashcards...", {
+        id: "pdf-upload",
+      });
+
+      const result = await uploadPDFAndGenerateFlashcards(
+        user.id,
+        uploadedFile
+      );
+
+      toast.success(
+        `Generated ${result.flashcardsCount} flashcards from PDF!`,
+        { id: "pdf-upload" }
+      );
+
       setShowUpload(false);
-      alert("Flashcards generated successfully! (This is a demo)");
-    }, 3000);
+      setUploadedFile(null);
+    } catch (error) {
+      toast.error(error.message || "Failed to generate flashcards", {
+        id: "pdf-upload",
+      });
+      setIsGenerating(false);
+    }
   };
 
   const handleExportPDF = () => {
     console.log("Exporting flashcards to PDF...");
     // Later: PDF export functionality
     alert("PDF export feature coming soon!");
+  };
+
+  const handleStartRevision = async () => {
+    if (!user?.id) {
+      toast.error("Please log in to start revision session");
+      return;
+    }
+
+    try {
+      toast.loading("Loading your flashcards...", { id: "fetch-cards" });
+
+      const result = await refetchFlashcards();
+
+      if (result.data) {
+        setCurrentCard(0);
+        setIsFlipped(false);
+
+        toast.success(`Loaded ${result.data.total} flashcards!`, {
+          id: "fetch-cards",
+        });
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to load flashcards", {
+        id: "fetch-cards",
+        style: {
+          fontSize: "12px",
+        },
+      });
+    }
   };
 
   return (
@@ -125,128 +228,206 @@ export default function Flashcards() {
         </div>
 
         {/* Progress Bar */}
-        <div className="card-base mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-300 text-sm">Progress</span>
-            <span className="text-gray-300 text-sm">
-              {currentCard + 1} / {mockFlashcards.length}
-            </span>
+        {flashcards.length > 0 && (
+          <div className="card-base mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-gray-300 text-sm">Progress</span>
+              <span className="text-gray-300 text-sm">
+                {currentCard + 1} / {flashcards.length}
+              </span>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-2">
+              <div
+                className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+                style={{
+                  width: `${((currentCard + 1) / flashcards.length) * 100}%`,
+                }}
+              ></div>
+            </div>
           </div>
-          <div className="w-full bg-gray-700 rounded-full h-2">
-            <div
-              className="bg-orange-500 h-2 rounded-full transition-all duration-300"
-              style={{
-                width: `${((currentCard + 1) / mockFlashcards.length) * 100}%`,
-              }}
-            ></div>
-          </div>
-        </div>
+        )}
 
-        {/* Flashcard */}
+        {/* Flashcard or Empty State */}
         <div className="mb-6">
-          <div
-            className="relative w-full h-80 cursor-pointer"
-            onClick={handleFlip}
-          >
-            {/* Front Side - Question */}
-            <div
-              className={`absolute inset-0 w-full h-full transition-all duration-500 ${
-                isFlipped
-                  ? "opacity-0 z-0 rotate-y-180"
-                  : "opacity-100 z-10 rotate-y-0"
-              }`}
-            >
-              <div className="card-base h-full flex flex-col justify-center items-center text-center">
-                <div className="mb-4">
-                  <span
-                    className={`px-3 py-1 rounded-lg text-sm font-medium ${
-                      currentFlashcard.difficulty === "Easy"
-                        ? "difficulty-easy bg-green-500/20"
-                        : currentFlashcard.difficulty === "Medium"
-                        ? "difficulty-medium bg-yellow-500/20"
-                        : "difficulty-hard bg-red-500/20"
-                    }`}
-                  >
-                    {currentFlashcard.difficulty}
-                  </span>
-                  <span className="ml-3 px-3 py-1 bg-blue-500/20 text-blue-400 rounded-lg text-sm">
-                    {currentFlashcard.topic}
-                  </span>
-                </div>
-                <h2 className="text-xl font-semibold text-white mb-4">
-                  {currentFlashcard.question}
-                </h2>
-                <p className="text-gray-400 text-sm">Click to reveal answer</p>
-              </div>
+          {flashcards.length === 0 ? (
+            // Empty State
+            <div className="card-base h-80 flex flex-col justify-center items-center text-center">
+              <div className="text-6xl mb-4">🗂️</div>
+              <h3 className="text-xl font-semibold text-white mb-2">
+                No Flashcards Yet
+              </h3>
+              <p className="text-gray-400 mb-4">
+                Start a revision session from your existing flashcards
+              </p>
+              <button
+                onClick={handleStartRevision}
+                disabled={isLoadingCards}
+                className="button-simple disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoadingCards ? "🔄 Loading..." : "🎯 Start Revision Session"}
+              </button>
             </div>
+          ) : (
+            // Flashcard Display
+            <div
+              className="relative w-full h-80 cursor-pointer"
+              onClick={handleFlip}
+            >
+              {/* Front Side - Question */}
+              <div
+                className={`absolute inset-0 w-full h-full transition-all duration-500 ${
+                  isFlipped
+                    ? "opacity-0 z-0 rotate-y-180"
+                    : "opacity-100 z-10 rotate-y-0"
+                }`}
+              >
+                <div className="card-base h-full flex flex-col justify-center items-center text-center">
+                  <div className="mb-4">
+                    <span
+                      className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                        currentFlashcard.difficulty === "Easy"
+                          ? "difficulty-easy bg-green-500/20"
+                          : currentFlashcard.difficulty === "Medium"
+                          ? "difficulty-medium bg-yellow-500/20"
+                          : "difficulty-hard bg-red-500/20"
+                      }`}
+                    >
+                      {currentFlashcard.difficulty}
+                    </span>
+                    <span className="ml-3 px-3 py-1 bg-blue-500/20 text-blue-400 rounded-lg text-sm">
+                      {currentFlashcard.topic}
+                    </span>
+                  </div>
+                  <h2 className="text-xl font-semibold text-white mb-4">
+                    {currentFlashcard.question}
+                  </h2>
+                  <p className="text-gray-400 text-sm">
+                    Click to reveal answer
+                  </p>
+                </div>
+              </div>
 
-            {/* Back Side - Answer */}
-            <div
-              className={`absolute inset-0 w-full h-full transition-all duration-500 ${
-                isFlipped
-                  ? "opacity-100 z-10 rotate-y-0"
-                  : "opacity-0 z-0 rotate-y-180"
-              }`}
-            >
-              <div className="card-base h-full flex flex-col justify-center items-center text-center">
-                <div className="mb-4">
-                  <span className="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-lg text-sm">
-                    Answer
-                  </span>
+              {/* Back Side - Answer */}
+              <div
+                className={`absolute inset-0 w-full h-full transition-all duration-500 ${
+                  isFlipped
+                    ? "opacity-100 z-10 rotate-y-0"
+                    : "opacity-0 z-0 rotate-y-180"
+                }`}
+              >
+                <div className="card-base h-full flex flex-col justify-center items-center text-center">
+                  <div className="mb-4">
+                    <span className="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-lg text-sm">
+                      Answer
+                    </span>
+                  </div>
+                  <p className="text-gray-100 text-lg leading-relaxed mb-4">
+                    {currentFlashcard.answer}
+                  </p>
+                  <p className="text-gray-400 text-sm">Click to flip back</p>
                 </div>
-                <p className="text-gray-100 text-lg leading-relaxed mb-4">
-                  {currentFlashcard.answer}
-                </p>
-                <p className="text-gray-400 text-sm">Click to flip back</p>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="grid md:grid-cols-2 gap-4 mb-6">
-          <div className="card-base">
+        {/* Navigation & Actions - Right beneath flashcards */}
+        {flashcards.length > 0 && (
+          <div className="card-base mb-6">
+            <div className="flex items-center justify-between gap-4">
+              <button
+                onClick={handlePrevious}
+                disabled={currentCard === 0}
+                className="button-simple disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ← Previous
+              </button>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleMarkUnknown}
+                  className="bg-red-500/20 text-red-400 border border-red-500/30 py-2 px-4 rounded-lg font-medium hover:bg-red-500/30 transition-colors"
+                >
+                  ❌ Unknown
+                </button>
+                <button
+                  onClick={handleMarkKnown}
+                  className="bg-green-500/20 text-green-400 border border-green-500/30 py-2 px-4 rounded-lg font-medium hover:bg-green-500/30 transition-colors"
+                >
+                  ✅ Known
+                </button>
+              </div>
+
+              <button
+                onClick={handleNext}
+                disabled={currentCard === flashcards.length - 1}
+                className="button-simple disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next →
+              </button>
+            </div>
+
+            <div className="text-center mt-3">
+              <span className="text-gray-300 text-sm">
+                Card {currentCard + 1} of {flashcards.length}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Session Actions */}
+        {flashcards.length > 0 && (
+          <div className="card-base mb-6">
             <h3 className="text-lg font-semibold text-white mb-4">
-              How well do you know this?
+              Session Actions
             </h3>
             <div className="flex gap-3">
               <button
-                onClick={handleMarkKnown}
-                className="flex-1 bg-green-500/20 text-green-400 border border-green-500/30 py-3 px-4 rounded-lg font-medium hover:bg-green-500/30 transition-colors"
+                onClick={handleStartRevision}
+                disabled={isLoadingCards}
+                className="flex-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 py-3 px-4 rounded-lg font-medium hover:bg-orange-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                ✅ Known
+                {isLoadingCards ? "🔄 Loading..." : "🔄 New Session"}
               </button>
               <button
-                onClick={handleMarkUnknown}
+                onClick={handleEndRevision}
                 className="flex-1 bg-red-500/20 text-red-400 border border-red-500/30 py-3 px-4 rounded-lg font-medium hover:bg-red-500/30 transition-colors"
               >
-                ❌ Unknown
+                🏁 End Revision
               </button>
             </div>
           </div>
+        )}
 
-          <div className="card-base">
-            <h3 className="text-lg font-semibold text-white mb-4">Actions</h3>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowUpload(!showUpload)}
-                className="flex-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 py-3 px-4 rounded-lg font-medium hover:bg-blue-500/30 transition-colors"
-              >
-                📄 Upload PDF
-              </button>
-              <button
-                onClick={handleExportPDF}
-                className="flex-1 bg-purple-500/20 text-purple-400 border border-purple-500/30 py-3 px-4 rounded-lg font-medium hover:bg-purple-500/30 transition-colors"
-              >
-                📄 Export PDF
-              </button>
-            </div>
+        {/* Upload PDF Section - Always Available */}
+        <div className="card-base mb-6">
+          <h3 className="text-lg font-semibold text-white mb-4">
+            Generate New Flashcards
+          </h3>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowUpload(!showUpload)}
+              className="flex-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 py-3 px-4 rounded-lg font-medium hover:bg-blue-500/30 transition-colors"
+            >
+              📄 Upload PDF
+            </button>
+            <button
+              onClick={handleExportPDF}
+              className="flex-1 bg-purple-500/20 text-purple-400 border border-purple-500/30 py-3 px-4 rounded-lg font-medium hover:bg-purple-500/30 transition-colors"
+            >
+              📄 Export PDF
+            </button>
           </div>
         </div>
 
         {/* PDF Upload Section */}
         {showUpload && (
-          <div className="card-base mb-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="card-base mb-6"
+          >
             <h3 className="text-lg font-semibold text-white mb-4">
               📄 Upload PDF to Generate Flashcards
             </h3>
@@ -274,7 +455,7 @@ export default function Flashcards() {
                   <div className="text-2xl mb-2">✅</div>
                   <p className="font-medium">{uploadedFile.name}</p>
                   <p className="text-sm text-gray-400 mt-1">
-                    {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                    {(uploadedFile.size / 1024).toFixed(2)} KB
                   </p>
                 </div>
               ) : (
@@ -304,35 +485,8 @@ export default function Flashcards() {
                 Cancel
               </button>
             </div>
-          </div>
+          </motion.div>
         )}
-
-        {/* Navigation */}
-        <div className="card-base">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={handlePrevious}
-              disabled={currentCard === 0}
-              className="button-simple disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              ← Previous
-            </button>
-
-            <div className="text-center">
-              <span className="text-gray-300">
-                Card {currentCard + 1} of {mockFlashcards.length}
-              </span>
-            </div>
-
-            <button
-              onClick={handleNext}
-              disabled={currentCard === mockFlashcards.length - 1}
-              className="button-simple disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next →
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

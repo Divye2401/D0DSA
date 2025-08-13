@@ -30,7 +30,7 @@ export default function Problems() {
         company: filters.company,
       }),
     enabled: !!user?.id && !isLoading,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
@@ -147,9 +147,14 @@ export default function Problems() {
               {isFetchingRecommendations ? "Loading..." : "🎯 Get Problems"}
             </button>
 
-            {recommendations.length > 0 && (
+            {recommendations.length && isFetchingRecommendations === false && (
               <p className="text-gray-400 text-sm mt-2">
                 Found {recommendations.length} personalized recommendations
+              </p>
+            )}
+            {isFetchingRecommendations && (
+              <p className="text-gray-400 text-sm mt-2">
+                Fetching recommendations...
               </p>
             )}
             {error && (

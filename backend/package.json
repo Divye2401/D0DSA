@@ -16,7 +16,9 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "leetcode-query": "^2.0.1",
-    "openai": "^4.104.0"
+    "multer": "^2.0.2",
+    "openai": "^4.104.0",
+    "pdf-parse": "^1.1.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
