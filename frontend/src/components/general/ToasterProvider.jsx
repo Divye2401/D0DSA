@@ -15,7 +15,7 @@ export default function ToasterProvider() {
         style: {
           background: "#1a1a1a",
           width: "165px",
-          height: "50px",
+          height: "60px",
           color: "#f0f0f0",
           border: "1px solid #3c3c3c",
           borderRadius: "12px",

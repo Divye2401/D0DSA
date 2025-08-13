@@ -70,7 +70,8 @@ CREATE TABLE daily_plans (
   hours_per_day INTEGER,
   weak_topics TEXT[] DEFAULT '{}',
   is_active BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  is_updated BOOLEAN DEFAULT FALSE
 );
 
 -- 6. Flashcards (Spaced repetition system)

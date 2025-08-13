@@ -8,6 +8,13 @@ import {
   uploadAndProcessPDF,
   getUserFlashcards,
 } from "../handlers/flashcardHandlers.js";
+import {
+  generateStudyPlan,
+  getActivePlan,
+  updateActivePlan,
+  getTodaysTasks,
+  toggleTaskCompletion,
+} from "../handlers/planHandlers.js";
 
 const userRouter = express.Router();
 
@@ -22,5 +29,14 @@ userRouter
   .post(uploadMiddleware, uploadAndProcessPDF)
   .get(getUserFlashcards)
   .patch(updateFlashcardProgress);
+
+userRouter
+  .route("/plan/:userId")
+  .post(generateStudyPlan)
+  .get(getActivePlan)
+  .patch(updateActivePlan);
+
+userRouter.route("/tasks/today/:userId").get(getTodaysTasks);
+userRouter.route("/tasks/toggle/:userId").put(toggleTaskCompletion);
 
 export default userRouter;

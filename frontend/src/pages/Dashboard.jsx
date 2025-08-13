@@ -13,6 +13,7 @@ import StreakHeatmap from "../components/dashboard/StreakHeatmap";
 import AIRecommendations from "../components/dashboard/AIRecommendations";
 import TodaysPlan from "../components/dashboard/TodaysPlan";
 import Navbar from "../components/general/Navbar";
+import { getTodaysTasks } from "../utils/planAPI";
 
 export default function Dashboard() {
   const { user, isLeetCodeCookieExpired } = useAuthStore();
@@ -32,9 +33,17 @@ export default function Dashboard() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  const { data: taskData } = useQuery({
+    queryKey: ["dashboardTasks", user?.id],
+    queryFn: () => {
+      console.log("Fetching tasks");
+      return getTodaysTasks(user?.id);
+    },
+    enabled: !!user?.id && !isLoading,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
   // Log dashboard data to console
-  console.log("Sync Loading:", isLoading);
-  console.log("📊 Dashboard Data:", dashboardData);
 
   const checkForNewCookie = async () => {
     setIsRefreshing(true);
@@ -130,7 +139,7 @@ export default function Dashboard() {
         </div>
 
         {/* Today's Plan */}
-        <TodaysPlan planData={dashboardData?.data?.todaysPlan} />
+        <TodaysPlan planData={taskData?.tasks} />
       </div>
     </div>
   );

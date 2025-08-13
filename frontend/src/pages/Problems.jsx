@@ -15,6 +15,7 @@ export default function Problems() {
   });
 
   const { isLoading } = useLeetCodeSync();
+  console.log("isLoading", isLoading);
   // Use React Query to fetch recommendations
   const {
     data: recommendationsData,
@@ -29,7 +30,7 @@ export default function Problems() {
         topics: filters.topic,
         company: filters.company,
       }),
-    enabled: !!user?.id && !isLoading,
+    enabled: !!user?.id && !isLoading, //Only works for auto fetching
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
@@ -147,11 +148,12 @@ export default function Problems() {
               {isFetchingRecommendations ? "Loading..." : "🎯 Get Problems"}
             </button>
 
-            {recommendations.length && isFetchingRecommendations === false && (
-              <p className="text-gray-400 text-sm mt-2">
-                Found {recommendations.length} personalized recommendations
-              </p>
-            )}
+            {recommendations.length > 0 &&
+              isFetchingRecommendations === false && (
+                <p className="text-gray-400 text-sm mt-2">
+                  Found {recommendations.length} personalized recommendations
+                </p>
+              )}
             {isFetchingRecommendations && (
               <p className="text-gray-400 text-sm mt-2">
                 Fetching recommendations...

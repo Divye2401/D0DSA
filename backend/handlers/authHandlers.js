@@ -75,7 +75,7 @@ export const updateProfileHandler = async (req, res) => {
         leetcode_username: newUsername,
         // If username changed, clear the encrypted cookie
         leetcode_session_cookie:
-          currentUsername !== newUsername ? null : undefined,
+          currentUsername !== newUsername ? null : undefined, //undefined is ignored by upsert
         updated_at: new Date().toISOString(),
       },
       { onConflict: "id" }

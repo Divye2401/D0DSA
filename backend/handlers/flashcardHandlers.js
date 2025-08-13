@@ -35,7 +35,7 @@ const supabase = createClient(
 export const uploadAndProcessPDF = async (req, res) => {
   try {
     const { userId } = req.params;
-    const file = req.file;
+    const file = req.file; // Can do req.file because of the upload middleware
 
     if (!file) {
       return res.status(400).json({ error: "No PDF file uploaded" });
@@ -44,7 +44,7 @@ export const uploadAndProcessPDF = async (req, res) => {
     console.log(`Processing PDF: ${file.originalname} for user: ${userId}`);
 
     // Extract text from PDF
-    const pdfData = await pdfParse(file.buffer);
+    const pdfData = await pdfParse(file.buffer); // pdfParse is a library that extracts text from PDFs
     const extractedText = pdfData.text;
 
     if (!extractedText || extractedText.trim().length < 50) {

@@ -66,6 +66,7 @@ export default function Flashcards() {
   const handleMarkKnown = () => {
     // Update the known field for current flashcard in React Query cache
     queryClient.setQueryData(["flashcards", user?.id], (oldData) => {
+      //Update the cache
       if (!oldData) return oldData;
 
       const updatedFlashcards = oldData.flashcards.map((card, index) =>
@@ -425,7 +426,7 @@ export default function Flashcards() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 1 }}
             className="card-base mb-6"
           >
             <h3 className="text-lg font-semibold text-white mb-4">

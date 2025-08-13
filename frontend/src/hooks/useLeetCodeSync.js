@@ -30,6 +30,10 @@ export function useLeetCodeSync() {
           queryKey: ["recommendations", user?.id],
         });
 
+        queryClient.invalidateQueries({
+          queryKey: ["flashcards", user?.id],
+        });
+
         return result;
       } catch (error) {
         toast.error(`Sync failed: ${error.message}`, {
@@ -60,7 +64,7 @@ export function useLeetCodeSync() {
   };
 
   return {
-    isLoading,
+    isLoading, //Any component that uses these vavlues  will act as if they have the query running there
     error,
     triggerSync,
   };
