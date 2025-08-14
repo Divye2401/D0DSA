@@ -42,7 +42,7 @@ export default function Navbar() {
           {/* Logo */}
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl">
             <span className="text-2xl">🎯</span>
-            <span className="text-xl font-bold text-white">DSA Prep</span>
+            <span className="text-xl font-bold text-white">D0 DSA</span>
           </div>
 
           {/* Navigation Items */}

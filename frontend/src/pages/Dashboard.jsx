@@ -92,7 +92,8 @@ export default function Dashboard() {
             DSA Analytics Dashboard 📊
           </h1>
           <p className="text-gray-300">
-            Welcome back, {user?.user_metadata?.full_name || user?.email}!
+            Welcome back,{" "}
+            {user?.user_metadata?.full_name.split(" ")[0] || user?.email}!
             {user?.user_metadata?.leetcode_username && (
               <span className="text-primary ml-2">
                 @{user.user_metadata.leetcode_username}

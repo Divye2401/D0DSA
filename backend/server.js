@@ -22,7 +22,15 @@ const supabase = createClient(
 );
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin:
+      process.env.NODE_ENV === "production"
+        ? false // No CORS needed in production (same domain)
+        : ["http://localhost:3000"], // Only for local development
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Routes
