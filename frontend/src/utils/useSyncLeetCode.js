@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.BACKEND_URL || "http://localhost:4000";
+const API_BASE_URL =
+  import.meta.env.MODE === "production" ? "" : "http://localhost:4000";
 
 /**
  * Helper function to sync user's LeetCode data

@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   Navigate,
+  useLocation,
 } from "react-router-dom";
 import useAuthStore from "./store/authStore";
 import Login from "./pages/Login";
@@ -14,9 +15,10 @@ import Flashcards from "./pages/Flashcards";
 import Plan from "./pages/Plan";
 import Mock from "./pages/Mock";
 import Settings from "./pages/Settings";
+import { PageWrapper } from "./components/PageWrapper";
 
-function App() {
-  const { user, loading } = useAuthStore();
+export default function App() {
+  const { loading } = useAuthStore();
 
   useEffect(() => {
     // Initialize auth listener
@@ -33,52 +35,107 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            user ? (
-              <Navigate to="/dashboard" replace />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-        <Route
-          path="/login"
-          element={user ? <Navigate to="/dashboard" replace /> : <Login />} //if user is logged in, redirect to/dashboard
-        />
-        <Route
-          path="/signup"
-          element={user ? <Navigate to="/dashboard" replace /> : <Signup />} //if user is logged in, redirect to/dashboard
-        />
-        <Route
-          path="/dashboard"
-          element={user ? <Dashboard /> : <Navigate to="/login" replace />} //if user is not logged in, redirect to login
-        />
-        <Route
-          path="/problems"
-          element={user ? <Problems /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/flashcards"
-          element={user ? <Flashcards /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/plan"
-          element={user ? <Plan /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/mock"
-          element={user ? <Mock /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/settings"
-          element={user ? <Settings /> : <Navigate to="/login" replace />}
-        />
-      </Routes>
+      <AppRoutes />
     </Router>
   );
 }
 
-export default App;
+function AppRoutes() {
+  const { user } = useAuthStore();
+  const location = useLocation();
+
+  return (
+    <Routes location={location} key={location.pathname}>
+      <Route
+        path="/"
+        element={
+          user ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route
+        path="/login"
+        element={user ? <Navigate to="/dashboard" replace /> : <Login />}
+      />
+      <Route
+        path="/signup"
+        element={user ? <Navigate to="/dashboard" replace /> : <Signup />}
+      />
+      <Route
+        path="/dashboard"
+        element={
+          user ? (
+            <PageWrapper>
+              <Dashboard />
+            </PageWrapper>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route
+        path="/problems"
+        element={
+          user ? (
+            <PageWrapper>
+              <Problems />
+            </PageWrapper>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route
+        path="/flashcards"
+        element={
+          user ? (
+            <PageWrapper>
+              <Flashcards />
+            </PageWrapper>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route
+        path="/plan"
+        element={
+          user ? (
+            <PageWrapper>
+              <Plan />
+            </PageWrapper>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route
+        path="/mock"
+        element={
+          user ? (
+            <PageWrapper>
+              <Mock />
+            </PageWrapper>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          user ? (
+            <PageWrapper>
+              <Settings />
+            </PageWrapper>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+    </Routes>
+  );
+}

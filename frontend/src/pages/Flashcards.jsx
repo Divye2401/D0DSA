@@ -6,6 +6,7 @@ import {
   uploadPDFAndGenerateFlashcards,
   getUserFlashcards,
   updateFlashcardProgress,
+  exportUserFlashcards,
 } from "../utils/flashcardAPI";
 import { toast } from "react-hot-toast";
 // eslint-disable-next-line no-unused-vars
@@ -178,10 +179,38 @@ export default function Flashcards() {
     }
   };
 
-  const handleExportPDF = () => {
-    console.log("Exporting flashcards to PDF...");
-    // Later: PDF export functionality
-    alert("PDF export feature coming soon!");
+  const handleExportPDF = async () => {
+    if (!user?.id) {
+      toast.error("Please log in to export flashcards");
+      return;
+    }
+
+    try {
+      toast.loading("Generating PDF...", { id: "export-pdf" });
+
+      const blob = await exportUserFlashcards(user.id);
+
+      // Get PDF as blob
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "my-flashcards.pdf";
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("PDF exported successfully!", { id: "export-pdf" });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error(error.message || "Failed to export PDF", {
+        id: "export-pdf",
+      });
+    }
   };
 
   const handleStartRevision = async () => {
@@ -199,7 +228,7 @@ export default function Flashcards() {
         setCurrentCard(0);
         setIsFlipped(false);
 
-        toast.success(`Loaded ${result.data.total} flashcards!`, {
+        toast.success(`Loaded ${result.data.flashcards.length} flashcards!`, {
           id: "fetch-cards",
         });
       }
@@ -254,10 +283,10 @@ export default function Flashcards() {
             // Empty State
             <div className="card-base h-80 flex flex-col justify-center items-center text-center">
               <div className="text-6xl mb-4">🗂️</div>
-              <h3 className="text-xl font-semibold text-white mb-2">
+              <h3 className="text-lg font-medium text-gray-200 mb-2">
                 No Flashcards Yet
               </h3>
-              <p className="text-gray-400 mb-4">
+              <p className="text-gray-500 mb-4">
                 Start a revision session from your existing flashcards
               </p>
               <button
@@ -299,10 +328,10 @@ export default function Flashcards() {
                       {currentFlashcard.topic}
                     </span>
                   </div>
-                  <h2 className="text-xl font-semibold text-white mb-4">
+                  <h2 className="text-lg font-medium text-gray-100 mb-4">
                     {currentFlashcard.question}
                   </h2>
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-gray-500 text-sm">
                     Click to reveal answer
                   </p>
                 </div>
@@ -322,10 +351,10 @@ export default function Flashcards() {
                       Answer
                     </span>
                   </div>
-                  <p className="text-gray-100 text-lg leading-relaxed mb-4">
+                  <p className="text-gray-200 text-base leading-relaxed mb-4">
                     {currentFlashcard.answer}
                   </p>
-                  <p className="text-gray-400 text-sm">Click to flip back</p>
+                  <p className="text-gray-500 text-sm">Click to flip back</p>
                 </div>
               </div>
             </div>
@@ -379,20 +408,20 @@ export default function Flashcards() {
         {/* Session Actions */}
         {flashcards.length > 0 && (
           <div className="card-base mb-6">
-            <h3 className="text-lg font-semibold text-white mb-4">
+            <h3 className="text-lg font-medium text-gray-200 mb-4">
               Session Actions
             </h3>
             <div className="flex gap-3">
               <button
                 onClick={handleStartRevision}
                 disabled={isLoadingCards}
-                className="flex-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 py-3 px-4 rounded-lg font-medium hover:bg-orange-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 button-simple disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoadingCards ? "🔄 Loading..." : "🔄 New Session"}
               </button>
               <button
                 onClick={handleEndRevision}
-                className="flex-1 bg-red-500/20 text-red-400 border border-red-500/30 py-3 px-4 rounded-lg font-medium hover:bg-red-500/30 transition-colors"
+                className="flex-1 px-4 py-2 bg-gray-700 text-gray-300 rounded-lg font-medium hover:bg-gray-600 hover:text-white transition-colors"
               >
                 🏁 End Revision
               </button>
@@ -402,19 +431,19 @@ export default function Flashcards() {
 
         {/* Upload PDF Section - Always Available */}
         <div className="card-base mb-6">
-          <h3 className="text-lg font-semibold text-white mb-4">
+          <h3 className="text-lg font-medium text-gray-200 mb-4">
             Generate New Flashcards
           </h3>
           <div className="flex gap-3">
             <button
               onClick={() => setShowUpload(!showUpload)}
-              className="flex-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 py-3 px-4 rounded-lg font-medium hover:bg-blue-500/30 transition-colors"
+              className="flex-1 button-simple"
             >
               📄 Upload PDF
             </button>
             <button
               onClick={handleExportPDF}
-              className="flex-1 bg-purple-500/20 text-purple-400 border border-purple-500/30 py-3 px-4 rounded-lg font-medium hover:bg-purple-500/30 transition-colors"
+              className="flex-1 px-4 py-2 bg-gray-700 text-gray-300 rounded-lg font-medium hover:bg-gray-600 hover:text-white transition-colors"
             >
               📄 Export PDF
             </button>
@@ -429,10 +458,10 @@ export default function Flashcards() {
             transition={{ duration: 1 }}
             className="card-base mb-6"
           >
-            <h3 className="text-lg font-semibold text-white mb-4">
+            <h3 className="text-lg font-medium text-gray-200 mb-4">
               📄 Upload PDF to Generate Flashcards
             </h3>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-400 mb-4">
               Upload your study notes, textbook chapters, or any PDF document.
               Our AI will extract key concepts and generate flashcards
               automatically.

@@ -7,7 +7,7 @@ export function useLeetCodeSync() {
   const { user, isLeetCodeCookieExpired } = useAuthStore();
   const queryClient = useQueryClient();
 
-  const { isLoading, error, refetch } = useQuery({
+  const { isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["syncLeetCode", user?.id],
     queryFn: async () => {
       toast.loading("Syncing LeetCode data...", {
@@ -32,6 +32,10 @@ export function useLeetCodeSync() {
 
         queryClient.invalidateQueries({
           queryKey: ["flashcards", user?.id],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ["dashboardTasks", user?.id],
         });
 
         return result;
@@ -64,7 +68,8 @@ export function useLeetCodeSync() {
   };
 
   return {
-    isLoading, //Any component that uses these vavlues  will act as if they have the query running there
+    isLoading, // Initial load only
+    isFetching, // Both initial load AND manual refetch
     error,
     triggerSync,
   };

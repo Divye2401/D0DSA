@@ -20,7 +20,7 @@ export default function Dashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Use global sync hook instead of local query
-  const { isLoading } = useLeetCodeSync();
+  const { isFetching } = useLeetCodeSync();
 
   // Fetch dashboard stats (only after sync is complete)
   const { data: dashboardData } = useQuery({
@@ -29,7 +29,7 @@ export default function Dashboard() {
       console.log("Fetching dashboard stats");
       return fetchDashboardStats(user?.id);
     },
-    enabled: !!user?.id && !isLoading, // Only run after sync is complete
+    enabled: !!user?.id && !isFetching, // Only run after sync is complete
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -39,7 +39,7 @@ export default function Dashboard() {
       console.log("Fetching tasks");
       return getTodaysTasks(user?.id);
     },
-    enabled: !!user?.id && !isLoading,
+    enabled: !!user?.id && !isFetching,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -134,7 +134,7 @@ export default function Dashboard() {
         <div className="mb-6">
           <AIRecommendations
             recommendations={dashboardData?.data?.recommendations}
-            isLoading={isLoading}
+            isLoading={isFetching}
           />
         </div>
 

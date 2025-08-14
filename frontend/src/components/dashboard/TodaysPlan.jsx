@@ -28,6 +28,10 @@ export default function TodaysPlan({ planData }) {
       queryClient.invalidateQueries({
         queryKey: ["dashboardTasks", user.id],
       });
+
+      queryClient.invalidateQueries({
+        queryKey: ["studyPlan", user.id],
+      });
     } catch (error) {
       // Revert cache on error
       queryClient.setQueryData(["dashboardTasks", user.id], (old) => ({

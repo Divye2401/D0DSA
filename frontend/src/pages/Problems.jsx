@@ -14,8 +14,16 @@ export default function Problems() {
     company: "all",
   });
 
-  const { isLoading } = useLeetCodeSync();
-  console.log("isLoading", isLoading);
+  const [resultFilters, setResultFilters] = useState({
+    minAcceptanceRate: 0,
+    minLikeRatio: 0,
+    minCompanyFrequency: 0,
+  });
+
+  const [showFilters, setShowFilters] = useState(true);
+
+  const { isFetching } = useLeetCodeSync();
+  console.log("isFetching", isFetching);
   // Use React Query to fetch recommendations
   const {
     data: recommendationsData,
@@ -30,12 +38,21 @@ export default function Problems() {
         topics: filters.topic,
         company: filters.company,
       }),
-    enabled: !!user?.id && !isLoading, //Only works for auto fetching
+    enabled: !!user?.id && !isFetching, //Only works for auto fetching
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
-  const recommendations = recommendationsData?.data?.recommendations || [];
+  const allRecommendations = recommendationsData?.data?.recommendations || [];
+
+  // Apply client-side filtering to recommendations
+  const recommendations = allRecommendations.filter((problem) => {
+    return (
+      (problem.acceptance_rate || 0) >= resultFilters.minAcceptanceRate &&
+      (problem.like_dislike_ratio || 0) >= resultFilters.minLikeRatio / 100 &&
+      (problem.company_frequency || 0) >= resultFilters.minCompanyFrequency
+    );
+  });
 
   const getPriorityBadge = (priority) => {
     if (priority > 50) {
@@ -98,7 +115,7 @@ export default function Problems() {
 
       <div className="max-w-6xl mx-auto p-4">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">
             💡 AI Problem Recommendations
           </h1>
@@ -167,6 +184,102 @@ export default function Problems() {
           </div>
         </div>
 
+        {/* Result Filters */}
+        {allRecommendations.length > 0 && !isFetchingRecommendations && (
+          <div className="card-base mb-4">
+            <div className="flex items-center justify-between mb-1">
+              <h4 className="text-lg font-medium text-gray-200">
+                Refined Results ({recommendations.length} of{" "}
+                {allRecommendations.length})
+              </h4>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() =>
+                    setResultFilters({
+                      minAcceptanceRate: 0,
+                      minLikeRatio: 0,
+                      minCompanyFrequency: 0,
+                    })
+                  }
+                  className="text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Clear All
+                </button>
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  {showFilters ? "Hide" : "Show"}
+                </button>
+              </div>
+            </div>
+
+            {showFilters && (
+              <div className="grid grid-cols-3 gap-3 mt-2">
+                {/* Acceptance Rate Filter */}
+                <div>
+                  <label className="block text-sm text-gray-300 mb-1">
+                    Acceptance: {resultFilters.minAcceptanceRate}%+
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={resultFilters.minAcceptanceRate}
+                    onChange={(e) =>
+                      setResultFilters({
+                        ...resultFilters,
+                        minAcceptanceRate: parseInt(e.target.value),
+                      })
+                    }
+                    className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                  />
+                </div>
+
+                {/* Rating Filter */}
+                <div>
+                  <label className="block text-sm text-gray-300 mb-1">
+                    Like Ratio: {resultFilters.minLikeRatio}%+
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={resultFilters.minLikeRatio}
+                    onChange={(e) =>
+                      setResultFilters({
+                        ...resultFilters,
+                        minLikeRatio: parseFloat(e.target.value),
+                      })
+                    }
+                    className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                  />
+                </div>
+
+                {/* Company Frequency Filter */}
+                <div>
+                  <label className="block text-sm text-gray-300 mb-1">
+                    Companies: {resultFilters.minCompanyFrequency}+
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="20"
+                    value={resultFilters.minCompanyFrequency}
+                    onChange={(e) =>
+                      setResultFilters({
+                        ...resultFilters,
+                        minCompanyFrequency: parseInt(e.target.value),
+                      })
+                    }
+                    className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Problem Cards */}
         <div className="space-y-4">
           {isFetchingRecommendations ? (
@@ -206,36 +319,58 @@ export default function Problems() {
                     </div>
 
                     {/* Title and Topic */}
-                    <h3 className="text-xl font-semibold text-white mb-2">
+                    <h3 className="text-lg font-medium text-gray-100 mb-2">
                       {problem.problem_name || problem.title}
                       {(problem.problem_topics || problem.topic) && (
-                        <span className="text-gray-400 font-normal">
+                        <span className="text-orange-400 font-normal">
                           {" – "}
                           {Array.isArray(problem.problem_topics)
-                            ? problem.problem_topics.join(", ")
+                            ? problem.problem_topics.join(",  ")
                             : problem.topic}
                         </span>
                       )}
                     </h3>
 
-                    {/* AI Reasoning */}
-                    <p className="text-gray-300 mb-3">
-                      <span className="text-gray-400">
-                        {problem.reasoning ? "AI Insight:" : "Reason:"}
-                      </span>{" "}
-                      {problem.reasoning || problem.reason}
+                    {/* Pattern Insight */}
+                    <p className="text-gray-400 mb-3">
+                      <span className="text-gray-100">Pattern Insight:</span>{" "}
+                      {problem.pattern_insight ||
+                        problem.reasoning ||
+                        problem.reason}
                     </p>
+
+                    {/* Problem Stats */}
+                    <div className="flex items-center gap-4 mb-3 text-sm">
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-500">✅</span>
+                        <span className="text-gray-400">
+                          {problem.acceptance_rate || 0}% accepted
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-500">🏢</span>
+                        <span className="text-gray-400">
+                          {problem.company_frequency || 0} companies
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-400">
+                          {(problem.like_dislike_ratio || 0).toFixed(1) * 100}%
+                          👍
+                        </span>
+                      </div>
+                    </div>
 
                     {/* Companies */}
                     {(problem.companies || []).length > 0 && (
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-gray-400 text-sm">
+                        <span className="text-gray-500 text-sm">
                           Companies:
                         </span>
                         {problem.companies.map((company) => (
                           <span
                             key={company}
-                            className="px-2 py-1 bg-gray-700 rounded text-xs text-gray-300"
+                            className="px-2 py-1 bg-gray-700/50 rounded text-xs text-gray-400"
                           >
                             {company}
                           </span>
@@ -251,9 +386,7 @@ export default function Problems() {
                         problem.leetcodeUrl ||
                         `https://leetcode.com/problems/${(
                           problem.problem_name || problem.title
-                        )
-                          ?.toLowerCase()
-                          .replace(/\s+/g, "-")}/`
+                        )?.toLowerCase()}/`
                       }
                       target="_blank"
                       rel="noopener noreferrer"
@@ -269,15 +402,15 @@ export default function Problems() {
             /* Empty State */
             <div className="card-base text-center py-12">
               <div className="max-w-md mx-auto">
-                <div className="text-6xl mb-4">🎯</div>
-                <h3 className="text-xl font-semibold text-white mb-2">
+                <div className="text-5xl mb-4">🎯</div>
+                <h3 className="text-lg font-medium text-gray-200 mb-2">
                   No recommendations yet
                 </h3>
-                <p className="text-gray-400 mb-6">
+                <p className="text-gray-500 mb-6">
                   Click "🎯 Get Problems" above to see personalized AI
                   recommendations based on your filters and progress.
                 </p>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-gray-600">
                   ✨ Select filters like difficulty, topic, or company to get
                   targeted suggestions
                 </div>

@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.BACKEND_URL || "http://localhost:4000";
+const API_BASE_URL =
+  import.meta.env.MODE === "production" ? "" : "http://localhost:4000";
 
 // Upload PDF and generate flashcards
 export const uploadPDFAndGenerateFlashcards = async (userId, pdfFile) => {
@@ -68,6 +69,23 @@ export const updateFlashcardProgress = async (userId, flashcards) => {
     return await response.json();
   } catch (error) {
     console.error("Update progress error:", error);
+    throw error;
+  }
+};
+
+export const exportUserFlashcards = async (userId) => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/user/flashcards/export/${userId}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to export user flashcards");
+    }
+
+    return await response.blob();
+  } catch (error) {
+    console.error("Export user flashcards error:", error);
     throw error;
   }
 };

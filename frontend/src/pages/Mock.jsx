@@ -414,8 +414,17 @@ export default function Mock() {
                           className="text-gray-200 whitespace-pre-wrap  "
                         >
                           <div>
-                            <p>Input: {JSON.stringify(example.input)}</p>
-                            <p>Output: {JSON.stringify(example.output)}</p>
+                            <p>
+                              Input:{" "}
+                              {JSON.stringify(example.input).replace(/"/g, " ")}
+                            </p>
+                            <p>
+                              Output:{" "}
+                              {JSON.stringify(example.output).replace(
+                                /"/g,
+                                " "
+                              )}
+                            </p>
                             <p>Explanation: {example.explanation}</p>
                           </div>
                         </div>
@@ -429,7 +438,10 @@ export default function Mock() {
                       Constraints:
                     </h4>
                     <div className="text-gray-200 whitespace-pre-wrap">
-                      {sessionData.constraints}
+                      {sessionData.constraints
+                        .split(",")
+                        .map((constraint) => constraint.trim())
+                        .join("\n")}
                     </div>
                   </div>
                 )}
@@ -438,10 +450,12 @@ export default function Mock() {
           )}
 
           <div className="grid lg:grid-cols-2 gap-6">
-            <div className="card-base">
-              <h3 className="text-lg font-semibold text-white mb-4">💬 Chat</h3>
+            <div className="card-base h-full flex flex-col">
+              <h3 className="text-lg font-medium text-gray-200 mb-4 flex items-center gap-2">
+                💬 <span>Interview Chat</span>
+              </h3>
 
-              <div className="h-64 overflow-y-auto mb-4 space-y-3">
+              <div className="flex-1 h-80 overflow-y-auto mb-4 space-y-4 p-2 bg-gray-900/30 rounded-lg">
                 {messages.map((message) => (
                   <div
                     key={message.id}
@@ -452,62 +466,111 @@ export default function Mock() {
                     }`}
                   >
                     <div
-                      className={`max-w-xs px-4 py-2  rounded-lg ${
+                      className={`flex items-start gap-2 max-w-[80%] ${
                         message.sender === "user"
-                          ? "bg-orange-500 text-white"
-                          : "bg-gray-700 text-gray-100"
+                          ? "flex-row-reverse"
+                          : "flex-row"
                       }`}
                     >
-                      <div className="text-sm font-medium mb-1">
-                        {message.sender === "user" ? "You" : "AI"}
+                      {/* Message bubble */}
+                      <div
+                        className={`px-4 py-3 rounded-2xl shadow-sm ${
+                          message.sender === "user"
+                            ? "bg-orange-500 text-white rounded-br-md"
+                            : "bg-gray-700 text-gray-100 rounded-bl-md border border-gray-600"
+                        }`}
+                      >
+                        <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                          {message.text}
+                        </div>
                       </div>
-                      <div className="text-sm">{message.text}</div>
                     </div>
                   </div>
                 ))}
 
                 {isAiTyping && (
                   <div className="flex justify-start">
-                    <div className="bg-gray-700 text-gray-100 px-4 py-2 rounded-lg">
-                      <div className="text-sm">AI is typing...</div>
+                    <div className="flex items-start gap-2 max-w-[80%]">
+                      <div className="w-8 h-8 rounded-full bg-gray-600 text-gray-200 flex items-center justify-center text-xs font-medium">
+                        AI
+                      </div>
+                      <div className="bg-gray-700 text-gray-100 px-4 py-3 rounded-2xl rounded-bl-md border border-gray-600">
+                        <div className="flex items-center gap-1">
+                          <div className="text-sm text-gray-300">
+                            AI is thinking
+                          </div>
+                          <div className="flex gap-1">
+                            <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"></div>{" "}
+                            {/* 3 dots */}
+                            <div
+                              className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"
+                              style={{ animationDelay: "0.1s" }}
+                            ></div>
+                            <div
+                              className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"
+                              style={{ animationDelay: "0.2s" }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 border-t border-gray-700/50 pt-4">
                 <input
                   type="text"
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                  placeholder="Type your response..."
-                  className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  placeholder="Ask questions, explain your approach..."
+                  className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-full text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
                 <button
                   onClick={sendMessage}
-                  className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+                  disabled={!userInput.trim()}
+                  className="px-6 py-3 bg-orange-500 text-white rounded-full hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Send
                 </button>
               </div>
             </div>
 
-            <div className="card-base">
-              <h3 className="text-lg font-semibold text-white mb-4">💻 Code</h3>
-              <textarea
-                value={codeInput}
-                onChange={(e) => setCodeInput(e.target.value)}
-                placeholder="// Write your solution here..."
-                className="w-full h-72 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-500 font-mono text-sm resize-none mb-3"
-              />
-              <button
-                onClick={() => sendMessage(`Here's my code:\n${codeInput}`)}
-                disabled={!codeInput.trim()}
-                className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                📤 Send Code for Review
-              </button>
+            <div className="card-base h-full flex flex-col">
+              <h3 className="text-lg font-medium text-gray-200 mb-4 flex items-center gap-2">
+                💻 <span>Code Editor</span>
+              </h3>
+              <div className="flex-1 flex flex-col">
+                <textarea
+                  value={codeInput}
+                  onChange={(e) => setCodeInput(e.target.value)}
+                  placeholder="// Write your solution here...
+// Use proper variable names and add comments
+// Think about edge cases and complexity"
+                  className="flex-1 w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent font-mono text-sm resize-none"
+                />
+
+                <div className="flex gap-2 mt-4 border-t border-gray-700/50 pt-4">
+                  <button
+                    onClick={() =>
+                      sendMessage(
+                        `Here's my solution:\n\n\`\`\`javascript\n${codeInput}\n\`\`\``
+                      )
+                    }
+                    disabled={!codeInput.trim()}
+                    className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                  >
+                    📤 Submit Solution
+                  </button>
+                  <button
+                    onClick={() => setCodeInput("")}
+                    className="px-4 py-3 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
+                  >
+                    🗑️ Clear
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

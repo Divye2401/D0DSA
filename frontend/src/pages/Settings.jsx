@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import Navbar from "../components/general/Navbar";
 import useAuthStore from "../store/authStore";
+import { toast } from "react-hot-toast";
 
 export default function Settings() {
   const { user, logout } = useAuthStore();
@@ -52,8 +53,10 @@ export default function Settings() {
 
       // If username changed, backend cleared cookies - logout user
       if (data.usernameChanged) {
-        console.log("LeetCode username changed, logging out...");
-        await logout();
+        toast.error("LeetCode username changed, logging out...");
+        setTimeout(async () => {
+          await logout();
+        }, 3000);
         return;
       }
 
@@ -65,22 +68,9 @@ export default function Settings() {
   };
 
   const handleStudyPrefsSave = () => {
+    toast.success("Study preferences saved");
     console.log("Study preferences saved:", studySettings);
     // TODO: Save to backend/Supabase
-  };
-
-  const handleExportData = () => {
-    console.log("Exporting user data...");
-  };
-
-  const handleResetProgress = () => {
-    if (
-      confirm(
-        "Are you sure you want to reset all progress? This cannot be undone."
-      )
-    ) {
-      console.log("Resetting progress...");
-    }
   };
 
   return (
@@ -151,9 +141,18 @@ export default function Settings() {
                 </div>
 
                 {isEditing && (
-                  <button onClick={handleProfileSave} className="button-simple">
-                    Save Changes
-                  </button>
+                  <>
+                    <button
+                      onClick={handleProfileSave}
+                      className="button-simple"
+                    >
+                      Save Changes
+                    </button>
+                    <p className="text-sm text-red-400/70">
+                      Note: Changing LeetCode username will require you to login
+                      again.
+                    </p>
+                  </>
                 )}
               </div>
             </div>
@@ -298,32 +297,32 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Data Management */}
+          {/* Quirky DSA Message */}
           <div className="card-base">
-            <h2 className="text-xl font-semibold text-white mb-6">
-              💾 Data Management
-            </h2>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <button
-                onClick={handleExportData}
-                className="px-4 py-3 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-lg font-medium hover:bg-blue-500/30 transition-colors"
-              >
-                📤 Export Data
-              </button>
-
-              <button
-                onClick={handleResetProgress}
-                className="px-4 py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg font-medium hover:bg-red-500/30 transition-colors"
-              >
-                🗑️ Reset Progress
-              </button>
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">🤓</div>
+              <h2 className="text-2xl font-bold text-white mb-4">
+                DSA Ninja in Training! 🥷
+              </h2>
+              <div className="max-w-2xl mx-auto space-y-3">
+                <p className="text-lg text-orange-400 font-medium">
+                  "Debugging is like being the detective in a crime movie where
+                  you are also the murderer."
+                </p>
+                <p className="text-gray-300">
+                  Remember: Every TLE is just your code asking for more time to
+                  think... and every stack overflow is just your recursion
+                  getting too excited! 🚀
+                </p>
+                <div className="flex justify-center items-center gap-2 mt-6">
+                  <span className="text-2xl">🔥</span>
+                  <span className="text-sm text-gray-400 italic">
+                    You've got this! One algorithm at a time.
+                  </span>
+                  <span className="text-2xl">💪</span>
+                </div>
+              </div>
             </div>
-
-            <p className="text-xs text-gray-400 mt-4">
-              Export your study data or reset all progress. Reset action cannot
-              be undone.
-            </p>
           </div>
         </div>
       </div>

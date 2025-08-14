@@ -6,9 +6,10 @@ import Spinner from "./Spinner";
 export default function Navbar() {
   const location = useLocation();
   const { logout } = useAuthStore();
-  const { triggerSync, isLoading } = useLeetCodeSync();
+  const { triggerSync, isFetching } = useLeetCodeSync();
 
   const handleSyncData = () => {
+    console.log("Syncing data...");
     triggerSync();
   };
 
@@ -67,11 +68,11 @@ export default function Navbar() {
             {/* Sync button */}
             <button
               onClick={handleSyncData}
-              disabled={isLoading}
+              disabled={isFetching}
               className="px-4 py-2 rounded-xl text-sm font-medium text-gray-300 hover:text-white bg-gray-800/50 hover:bg-primary/80 border border-gray-700/50 hover:border-primary/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Sync LeetCode Data"
             >
-              {isLoading ? (
+              {isFetching ? (
                 <div className="flex items-center gap-2">
                   <Spinner />
                   <span>Syncing...</span>

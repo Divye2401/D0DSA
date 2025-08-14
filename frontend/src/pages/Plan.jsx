@@ -11,11 +11,14 @@ import {
   generateStudyPlan,
   getStudyPlan,
   updateStudyPlan,
+  toggleTaskCompletion,
 } from "../utils/planAPI";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLeetCodeSync } from "../hooks/useLeetCodeSync";
 
 export default function Plan() {
   const { user } = useAuthStore();
+  const { isFetching } = useLeetCodeSync();
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState({
     company: "google",
@@ -40,11 +43,12 @@ export default function Plan() {
       await new Promise((resolve) => setTimeout(resolve, 3000)); //await to wait
       return getStudyPlan(user.id);
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !isFetching,
     staleTime: 180 * 60 * 1000, // 3 hours
   });
 
   const generatedPlan = planData?.plan;
+  console.log("generatedPlan", generatedPlan);
 
   // Options for dropdowns
   const companyOptions = [
@@ -86,12 +90,9 @@ export default function Plan() {
     const today = new Date().toISOString().split("T")[0];
     if (planDate === today) {
       return "text-white"; // Today - bright orange
-    } else if (planDate < today) {
+    } else {
       return "text-gray-400"; // Past - muted gray
-    } else if (planDate > today) {
-      return "text-orange-400/55"; // Future - slate tint
     }
-    return "text-white"; // Default fallback
   };
 
   // Helper function to get header text color for sections
@@ -99,25 +100,19 @@ export default function Plan() {
     const today = new Date().toISOString().split("T")[0];
     if (planDate === today) {
       return "text-white"; // Today - bright orange for headers
-    } else if (planDate < today) {
-      return "text-gray-300"; // Past - muted for headers
-    } else if (planDate > today) {
-      return "text-orange-400/55"; // Future - slate for headers
+    } else {
+      return "text-gray-400"; // Default fallback
     }
-    return "text-white"; // Default fallback
   };
 
   // Helper function to get content text color
   const getContentTextColor = (planDate) => {
     const today = new Date().toISOString().split("T")[0];
     if (planDate === today) {
-      return "text-white"; // Today - keep current orange
-    } else if (planDate < today) {
-      return "text-gray-400"; // Past - muted
-    } else if (planDate > today) {
-      return "text-orange-400/55"; // Future - slate
+      return "text-white font-semibold"; // Today - keep current orange
+    } else {
+      return "text-gray-400";
     }
-    return "text-orange-400"; // Default fallback
   };
 
   const handleTopicToggle = (topic) => {
@@ -216,6 +211,58 @@ export default function Plan() {
       });
     } finally {
       setIsModifying(false);
+    }
+  };
+
+  // Optimistic task toggle using React Query cache
+  const handleTaskToggle = async (taskId, completed, taskDate) => {
+    const newCompleted = !completed;
+    if (!user?.id) {
+      toast.error("Please log in to update tasks");
+      return;
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+    if (taskDate !== today) {
+      toast.error("You can only toggle tasks for today");
+      return;
+    }
+    try {
+      // 1. IMMEDIATELY update the existing planData in React Query cache
+      queryClient.setQueryData(["studyPlan", user.id], (oldData) => {
+        if (!oldData) return oldData;
+
+        return {
+          ...oldData,
+          plan: oldData.plan.map((day) => ({
+            ...day,
+            problemTasks:
+              day.problemTasks?.map((task) =>
+                task.id === taskId ? { ...task, completed: newCompleted } : task
+              ) || [],
+            theoryTasks:
+              day.theoryTasks?.map((task) =>
+                task.id === taskId ? { ...task, completed: newCompleted } : task
+              ) || [],
+          })),
+        };
+      });
+
+      // 2. Update backend
+      await toggleTaskCompletion(user.id, taskId, newCompleted);
+      queryClient.invalidateQueries({
+        queryKey: ["dashboardTasks", user.id],
+      });
+
+      toast.success(
+        newCompleted ? "✅ Task completed!" : "⏳ Task marked incomplete"
+      );
+    } catch (error) {
+      console.error("Error toggling task:", error);
+      toast.error("Failed to update task");
+
+      // 3. only on error, refetch to get correct data from server
+      refetchPlan();
     }
   };
 
@@ -440,23 +487,56 @@ Example: 'Make Day 2 easier', 'Add more tree problems', 'Replace hard DP with me
                                 >
                                   Problems
                                 </span>
-                                <div className="flex flex-wrap gap-3 mt-2">
-                                  {dayPlan.problems.map((problem, idx) => (
-                                    <button
-                                      key={idx}
-                                      className={`${getContentTextColor(
-                                        dayPlan.date
-                                      )} text-sm bg-gray-800/50 hover:bg-gray-700/50 px-3 py-1 rounded-lg border border-gray-700/30 hover:border-orange-400/30 transition-all duration-200 cursor-pointer`}
-                                      onClick={() => {
-                                        // Extract problem name and search on LeetCode
-                                        const problemName =
-                                          problem.split(" (")[0]; // Remove difficulty part
-                                        const searchUrl = `https://leetcode.com/problems/${problemName}`;
-                                        window.open(searchUrl, "_blank");
-                                      }}
+                                <div className="flex flex-col gap-2 mt-2">
+                                  {(dayPlan.problemTasks || []).map((task) => (
+                                    <div
+                                      key={task.id}
+                                      className="flex items-center gap-3"
                                     >
-                                      {problem}
-                                    </button>
+                                      {/* Checkbox */}
+                                      <button
+                                        onClick={() =>
+                                          handleTaskToggle(
+                                            task.id,
+                                            task.completed,
+                                            task.date
+                                          )
+                                        }
+                                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 ${
+                                          task.completed
+                                            ? "bg-orange-500 border-orange-500"
+                                            : "border-gray-400 hover:border-orange-400"
+                                        }`}
+                                      >
+                                        {task.completed && (
+                                          <span className="text-white text-xs">
+                                            ✓
+                                          </span>
+                                        )}
+                                      </button>
+
+                                      {/* Problem button */}
+                                      <button
+                                        className={`${getContentTextColor(
+                                          dayPlan.date
+                                        )} text-sm bg-gray-800/50 hover:bg-gray-700/50 px-3 py-1 rounded-lg border border-gray-700/30 hover:border-orange-400/30 transition-all duration-200 cursor-pointer flex-1 text-left ${
+                                          task.completed
+                                            ? "line-through opacity-60 bg-green-500/30"
+                                            : ""
+                                        }`}
+                                        onClick={() => {
+                                          // Extract problem name and search on LeetCode
+                                          const problemName =
+                                            task.task_description.split(
+                                              " ("
+                                            )[0];
+                                          const searchUrl = `https://leetcode.com/problems/${problemName}`;
+                                          window.open(searchUrl, "_blank");
+                                        }}
+                                      >
+                                        {task.task_description}
+                                      </button>
+                                    </div>
                                   ))}
                                 </div>
                               </div>
@@ -477,13 +557,49 @@ Example: 'Make Day 2 easier', 'Add more tree problems', 'Replace hard DP with me
                                 >
                                   Theory
                                 </span>
-                                <p
-                                  className={`${getContentTextColor(
-                                    dayPlan.date
-                                  )} text-sm mt-2 leading-relaxed`}
-                                >
-                                  {dayPlan.theory}
-                                </p>
+                                <div className="flex flex-col gap-2 mt-2">
+                                  {(dayPlan.theoryTasks || []).map((task) => (
+                                    <div
+                                      key={task.id}
+                                      className="flex items-start gap-3"
+                                    >
+                                      {/* Checkbox */}
+                                      <button
+                                        onClick={() =>
+                                          handleTaskToggle(
+                                            task.id,
+                                            task.completed,
+                                            task.date
+                                          )
+                                        }
+                                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200 mt-0.5 flex-shrink-0 ${
+                                          task.completed
+                                            ? "bg-orange-500 border-orange-500"
+                                            : "border-gray-400 hover:border-orange-400"
+                                        }`}
+                                      >
+                                        {task.completed && (
+                                          <span className="text-white text-xs">
+                                            ✓
+                                          </span>
+                                        )}
+                                      </button>
+
+                                      {/* Theory content */}
+                                      <p
+                                        className={`${getContentTextColor(
+                                          dayPlan.date
+                                        )} text-sm leading-relaxed flex-1 rounded-lg px-3 py-1 ${
+                                          task.completed
+                                            ? "line-through opacity-60 bg-green-500/30"
+                                            : ""
+                                        }`}
+                                      >
+                                        {task.task_description}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           </div>
