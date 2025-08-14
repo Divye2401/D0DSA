@@ -7,6 +7,7 @@ import {
   uploadMiddleware,
   uploadAndProcessPDF,
   getUserFlashcards,
+  exportUserFlashcards,
 } from "../handlers/flashcardHandlers.js";
 import {
   generateStudyPlan,
@@ -34,6 +35,8 @@ userRouter
   .post(uploadMiddleware, uploadAndProcessPDF)
   .get(getUserFlashcards)
   .patch(updateFlashcardProgress);
+
+userRouter.route("/flashcards/export/:userId").get(exportUserFlashcards);
 
 userRouter
   .route("/plan/:userId")

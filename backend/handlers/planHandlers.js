@@ -11,7 +11,7 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
-
+//---------------------------------------------------------------------------
 // Get user's leetcode stats for personalization
 const getUserStats = async (userId, weakTopics) => {
   try {
@@ -72,6 +72,8 @@ const getUserStats = async (userId, weakTopics) => {
     return [];
   }
 };
+
+//---------------------------------------------------------------------------
 
 // Generate personalized study plan
 export const generateStudyPlan = async (req, res) => {
@@ -205,12 +207,79 @@ Make it progressive (easy to hard) and relevant to ${company} interview patterns
         // Don't fail the request, just log the error
       } else {
         console.log(`Plan saved with ID: ${savedPlan.id}`);
+
+        // Add dates to plan and create tasks
+        const today = new Date();
+        const planWithDates = studyPlan.map((dayPlan, index) => {
+          const currentDate = new Date(today);
+          currentDate.setDate(today.getDate() + index);
+          const dateString = currentDate.toISOString().split("T")[0];
+
+          return {
+            ...dayPlan,
+            date: dateString,
+          };
+        });
+
+        // Create tasks for the new plan
+        try {
+          for (const dayPlan of planWithDates) {
+            // Create progress entries for problems
+            for (const problem of dayPlan.problems) {
+              await supabase.from("task_progress").insert({
+                user_id: userId,
+                plan_id: savedPlan.id,
+                task_type: "problem",
+                task_description: problem,
+                date: dayPlan.date,
+                completed: false,
+              });
+            }
+
+            // Create progress entry for theory
+            if (dayPlan.theory) {
+              await supabase.from("task_progress").insert({
+                user_id: userId,
+                plan_id: savedPlan.id,
+                task_type: "theory",
+                task_description: dayPlan.theory,
+                date: dayPlan.date,
+                completed: false,
+              });
+            }
+          }
+
+          console.log(`Created tasks for plan: ${savedPlan.id}`);
+
+          // Enhance plan with task objects
+          const enhancedPlan = await getTasksForPlan(
+            userId,
+            savedPlan.id,
+            planWithDates
+          );
+
+          return res.json({
+            success: true,
+            planDuration: `${enhancedPlan.length}`,
+            plan: enhancedPlan,
+            settings: {
+              company,
+              days,
+              weakTopics,
+              timePerDay,
+            },
+          });
+        } catch (taskError) {
+          console.error("Error creating tasks:", taskError);
+          // Fall back to basic plan response
+        }
       }
     } catch (dbError) {
       console.error("Database error while saving plan:", dbError);
       // Continue without failing the request
     }
 
+    // Fallback response (if plan saving failed or task creation failed)
     res.json({
       success: true,
       planDuration: `${studyPlan.length}`,
@@ -228,6 +297,7 @@ Make it progressive (easy to hard) and relevant to ${company} interview patterns
   }
 };
 
+//---------------------------------------------------------------------------
 // Modify existing plan based on user feedback
 export const updateActivePlan = async (req, res) => {
   try {
@@ -350,6 +420,7 @@ Make reasonable changes that align with their request while maintaining a logica
   }
 };
 
+//---------------------------------------------------------------------------
 // Get user's active study plan
 export const getActivePlan = async (req, res) => {
   try {
@@ -440,10 +511,17 @@ export const getActivePlan = async (req, res) => {
       // Don't fail the request, just log the error
     }
 
+    // Enhance plan with task objects
+    const enhancedPlan = await getTasksForPlan(
+      userId,
+      activePlan.id,
+      planWithDates
+    );
+
     res.json({
       success: true,
       message: "Active study plan retrieved",
-      plan: planWithDates,
+      plan: enhancedPlan,
       settings: {
         company: activePlan.target_company,
         days: activePlan.prep_days,
@@ -458,6 +536,50 @@ export const getActivePlan = async (req, res) => {
   }
 };
 
+//---------------------------------------------------------------------------
+// Helper function to fetch tasks for a plan and enhance it with task objects
+const getTasksForPlan = async (userId, planId, planData) => {
+  try {
+    // Fetch all tasks for this plan
+    const { data: allTasks, error } = await supabase
+      .from("task_progress")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("plan_id", planId)
+      .order("date", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching tasks:", error);
+      return planData; // Return original plan if task fetch fails
+    }
+
+    // Group tasks by date and type
+    const tasksByDate = {};
+    allTasks.forEach((task) => {
+      if (!tasksByDate[task.date]) {
+        tasksByDate[task.date] = { problems: [], theory: [] };
+      }
+      if (task.task_type === "problem") {
+        tasksByDate[task.date].problems.push(task);
+      } else if (task.task_type === "theory") {
+        tasksByDate[task.date].theory.push(task);
+      }
+    });
+
+    // Enhance plan with task objects
+    const enhancedPlan = planData.map((dayPlan) => ({
+      ...dayPlan,
+      problemTasks: tasksByDate[dayPlan.date]?.problems || [],
+      theoryTasks: tasksByDate[dayPlan.date]?.theory || [],
+    }));
+
+    return enhancedPlan;
+  } catch (error) {
+    console.error("Error enhancing plan with tasks:", error);
+    return planData; // Return original plan if enhancement fails
+  }
+};
+//---------------------------------------------------------------------------
 // Get today's tasks for a user
 export const getTodaysTasks = async (req, res) => {
   try {
@@ -521,6 +643,7 @@ export const getTodaysTasks = async (req, res) => {
   }
 };
 
+//---------------------------------------------------------------------------
 // Toggle task completion status
 export const toggleTaskCompletion = async (req, res) => {
   try {

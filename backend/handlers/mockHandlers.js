@@ -66,7 +66,7 @@ Respond in this exact JSON format:
 }
 
 Make it realistic for a ${company} interview and appropriate for ${validDifficulty} level. 
-Be Varied in the problem u choose`;
+Keep some variation in the problem you choose`;
 
     console.log("Generating problem with OpenAI...");
     const aiResponse = await openai.chat.completions.create({

@@ -31,7 +31,9 @@ export const getRecommendationsHandler = async (req, res) => {
     // Build query to filter problems
     let query = supabase //not awaiting here
       .from("leetcode_problems")
-      .select("*")
+      .select(
+        "id, title, difficulty, topics, companies, acceptance_rate, frequency_score, slug, like_ratio"
+      )
       .eq("is_premium", false) // Only free problems
       .order("frequency_score", { ascending: false }); // Popular first
 
@@ -109,7 +111,7 @@ export const getRecommendationsHandler = async (req, res) => {
     const limitedProblemshighFrequency = unsolvedProblems
       .filter((problem) => problem.frequency_score > 50)
       .sort(() => Math.random() - 0.5)
-      .slice(0, 5);
+      .slice(0, 10);
 
     const limitedProblemsmediumFrequency = unsolvedProblems
       .filter(
@@ -117,17 +119,12 @@ export const getRecommendationsHandler = async (req, res) => {
           problem.frequency_score <= 50 && problem.frequency_score > 30
       )
       .sort(() => Math.random() - 0.5)
-      .slice(0, 3);
+      .slice(0, 6);
 
     const limitedProblemslowFrequency = unsolvedProblems
       .filter((problem) => problem.frequency_score <= 30)
       .sort(() => Math.random() - 0.5)
-      .slice(0, 2);
-
-    // Debug logs - check frequency score distribution
-    const allScores = unsolvedProblems
-      .map((p) => p.frequency_score)
-      .sort((a, b) => a - b);
+      .slice(0, 4);
 
     const limitedProblems = [
       ...limitedProblemshighFrequency,
@@ -135,35 +132,60 @@ export const getRecommendationsHandler = async (req, res) => {
       ...limitedProblemslowFrequency,
     ];
 
-    // Format basic recommendations
+    // Helper function to calculate company frequency
+    const getCompanyFrequency = (companies) => {
+      if (!companies || typeof companies !== "object") return 0;
+
+      const uniqueCompanies = new Set();
+
+      // Iterate through each difficulty level (1, 2, 3)
+      Object.values(companies).forEach((difficultyArray) => {
+        if (Array.isArray(difficultyArray)) {
+          difficultyArray.forEach((companyObj) => {
+            if (companyObj && companyObj.name) {
+              uniqueCompanies.add(companyObj.name);
+            }
+          });
+        }
+      });
+
+      return uniqueCompanies.size;
+    };
+
+    // Format enhanced recommendations with additional data
     const recommendations = limitedProblems.map((problem, index) => ({
       problem_id: problem.id,
       problem_name: problem.title,
       problem_difficulty: problem.difficulty,
       problem_topics: problem.topics,
       priority_score: problem.frequency_score,
+      // New fields from leetcode_problems table
+      acceptance_rate: Math.round((problem.acceptance_rate || 0) * 100), // Convert to percentage
+      company_frequency: getCompanyFrequency(problem.companies),
+      like_dislike_ratio: problem.like_ratio || 0, // Use existing like_ratio field
+      leetcode_slug: problem.slug,
     }));
 
-    // Send to AI for reasoning
-    const recommendationsWithReasoning = await getAIRecommendationReasoning(
+    // Send to AI for pattern insights
+    const recommendationsWithInsights = await getAIPatternInsights(
       recommendations,
       difficulty,
       topics,
       company
     );
 
-    recommendationsWithReasoning.sort(
+    recommendationsWithInsights.sort(
       (a, b) => b.priority_score - a.priority_score
     );
 
     console.log(
-      `Got ${recommendationsWithReasoning.length} recommendations for filters: ${difficulty}, ${topics}, ${company}`
+      `Got ${recommendationsWithInsights.length} recommendations for filters: ${difficulty}, ${topics}, ${company}`
     );
 
     res.json({
       success: true,
       data: {
-        recommendations: recommendationsWithReasoning,
+        recommendations: recommendationsWithInsights,
       },
     });
   } catch (error) {
@@ -175,7 +197,7 @@ export const getRecommendationsHandler = async (req, res) => {
   }
 };
 
-async function getAIRecommendationReasoning(
+async function getAIPatternInsights(
   recommendations,
   difficulty,
   topics,
@@ -194,16 +216,19 @@ async function getAIRecommendationReasoning(
     if (company && company !== "all") activeFilters.push(`company: ${company}`);
     const filtersString = activeFilters.join(", ");
 
-    const prompt = `As a DSA expert, provide brief reasoning for why each problem was recommended.
-
-Applied Filters: ${
-      filtersString || "No specific filters - general recommendations"
-    }
+    const prompt = `As a DSA expert, provide practical solving insights for each problem. Be detailed but focused.
 
 Problems:
 ${problemsList.join("\n")}
 
-For each problem, provide concise 1-2 sentence reasoning. Return ONLY a JSON array where each object has: problem_name and reasoning.`;
+For each problem, provide insights in 1-2 sentences that cover:
+- The core algorithmic pattern or technique required to solve it efficiently
+- Key implementation details, data structures, or optimizations to consider
+- Common pitfalls or important edge cases to watch out for
+
+Focus on actionable advice that helps students understand the approach and avoid mistakes.
+
+Return ONLY a JSON array where each object has: problem_name and pattern_insight.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
@@ -211,7 +236,7 @@ For each problem, provide concise 1-2 sentence reasoning. Return ONLY a JSON arr
         {
           role: "system",
           content:
-            "You are a DSA expert. Provide concise, insightful reasoning for problem recommendations. Always respond with valid JSON only.",
+            "You are a DSA expert teacher. Provide practical, detailed solving insights that help students understand both the approach and implementation. Be specific about patterns, optimizations, and common mistakes. Always respond with valid JSON only.",
         },
         {
           role: "user",
@@ -219,7 +244,7 @@ For each problem, provide concise 1-2 sentence reasoning. Return ONLY a JSON arr
         },
       ],
       temperature: 0.7,
-      max_tokens: 1200,
+      max_tokens: 1500,
     });
 
     const aiResponse = completion.choices[0].message.content;
@@ -239,36 +264,36 @@ For each problem, provide concise 1-2 sentence reasoning. Return ONLY a JSON arr
 
       const aiRecommendations = JSON.parse(cleanResponse);
 
-      // Merge AI reasoning with our original recommendation data
+      // Merge AI pattern insights with our original recommendation data
       const mergedRecommendations = recommendations.map((rec) => {
         const aiRec = aiRecommendations.find(
           (ai) => ai.problem_name === rec.problem_name
         );
         return {
           ...rec,
-          reasoning:
-            aiRec?.reasoning ||
-            "Selected based on frequency score and filter preferences.",
+          pattern_insight:
+            aiRec?.pattern_insight ||
+            "Practice fundamental problem-solving techniques and algorithmic thinking.",
         };
       });
 
       return mergedRecommendations;
     } catch (parseError) {
       console.error("Failed to parse AI response, using fallback:", parseError);
-      // Fallback: add generic reasoning
+      // Fallback: add generic pattern insight
       return recommendations.map((rec) => ({
         ...rec,
-        reasoning:
-          "Selected based on frequency score and filter preferences for effective DSA practice.",
+        pattern_insight:
+          "Practice fundamental problem-solving techniques and algorithmic thinking.",
       }));
     }
   } catch (error) {
     console.error("AI reasoning generation failed:", error);
-    // Fallback: return original recommendations with generic reasoning
+    // Fallback: return original recommendations with generic pattern insight
     return recommendations.map((rec) => ({
       ...rec,
-      reasoning:
-        "Selected based on frequency score and filter preferences for effective DSA practice.",
+      pattern_insight:
+        "Practice fundamental problem-solving techniques and algorithmic thinking.",
     }));
   }
 }

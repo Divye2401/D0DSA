@@ -104,6 +104,21 @@ CREATE TABLE mock_sessions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 8. Task Progress (Track completion of plan tasks)
+CREATE TABLE task_progress (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE,
+  plan_id UUID REFERENCES daily_plans(id) ON DELETE CASCADE,
+  task_type TEXT NOT NULL CHECK (task_type IN ('problem', 'theory')),
+  task_description TEXT NOT NULL,
+  date DATE NOT NULL,
+  completed BOOLEAN DEFAULT FALSE,
+  completed_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, plan_id, task_type, task_description, date)
+);
+
 -- Triggers for updated_at
 CREATE TRIGGER update_user_profiles_updated_at BEFORE
 UPDATE ON user_profiles FOR EACH ROW
@@ -120,6 +135,10 @@ CREATE INDEX idx_flashcards_topic ON flashcards(topic);
 CREATE INDEX idx_mock_sessions_user_id ON mock_sessions(user_id);
 CREATE INDEX idx_mock_sessions_created_at ON mock_sessions(created_at DESC);
 
+CREATE INDEX idx_task_progress_user_id ON task_progress(user_id);
+CREATE INDEX idx_task_progress_date ON task_progress(date);
+CREATE INDEX idx_task_progress_plan_id ON task_progress(plan_id);
+
 -- Row Level Security (RLS) Policies
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE leetcode_stats ENABLE ROW LEVEL SECURITY;
@@ -127,6 +146,7 @@ ALTER TABLE solved_problems ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE flashcards ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mock_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE task_progress ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies: Users can only access their own data
 CREATE POLICY "Users can access own profile" ON user_profiles
@@ -145,6 +165,9 @@ CREATE POLICY "Users can access own flashcards" ON flashcards
   FOR ALL USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can access own mock sessions" ON mock_sessions
+  FOR ALL USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can access own task progress" ON task_progress
   FOR ALL USING (auth.uid() = user_id);
 
 -- LeetCode problems table is public (read-only for authenticated users)

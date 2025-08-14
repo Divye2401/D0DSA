@@ -18,7 +18,8 @@
     "leetcode-query": "^2.0.1",
     "multer": "^2.0.2",
     "openai": "^4.104.0",
-    "pdf-parse": "^1.1.1"
+    "pdf-parse": "^1.1.1",
+    "pdfkit": "^0.17.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

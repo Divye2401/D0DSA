@@ -89,7 +89,7 @@ export const updateProfileHandler = async (req, res) => {
     res.json({
       success: true,
       message: "Profile updated successfully",
-      usernameChanged: currentUsername !== newUsername,
+      usernameChanged: currentUsername !== newUsername, //Sending this to frontend to handle the logout
       data: updatedUser.user.user_metadata,
     });
   } catch (error) {
