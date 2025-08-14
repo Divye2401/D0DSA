@@ -1,8 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "../components/general/Navbar";
 import CustomDropdown from "../components/general/CustomDropdown";
+import { toast } from "react-hot-toast";
+import useAuthStore from "../store/authStore";
+import {
+  createMockInterview,
+  sendMockMessage,
+  endMockInterview,
+} from "../utils/mockAPI";
 
 export default function Mock() {
+  const { user } = useAuthStore();
   const [sessionState, setSessionState] = useState("setup");
   const [sessionSettings, setSessionSettings] = useState({
     topic: "arrays",
@@ -15,7 +23,11 @@ export default function Mock() {
   const [userInput, setUserInput] = useState("");
   const [codeInput, setCodeInput] = useState("");
   const [timeRemaining, setTimeRemaining] = useState(0);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isAiTyping, setIsAiTyping] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
+  const [sessionData, setSessionData] = useState(null);
+  const [isEnding, setIsEnding] = useState(false);
+  const [feedbackData, setFeedbackData] = useState(null);
 
   const mockScorecard = {
     score: 85,
@@ -30,6 +42,20 @@ export default function Mock() {
     { value: "arrays", label: "Arrays" },
     { value: "strings", label: "Strings" },
     { value: "trees", label: "Trees" },
+    { value: "graphs", label: "Graphs" },
+    { value: "dynamic programming", label: "Dynamic Programming" },
+    { value: "backtracking", label: "Backtracking" },
+    { value: "greedy", label: "Greedy" },
+    { value: "divide and conquer", label: "Divide and Conquer" },
+    { value: "binary search", label: "Binary Search" },
+    { value: "bit manipulation", label: "Bit Manipulation" },
+    { value: "stack", label: "Stack" },
+    { value: "queue", label: "Queue" },
+    { value: "heap", label: "Heap" },
+    { value: "trie", label: "Trie" },
+    { value: "hash table", label: "Hash Table" },
+    { value: "linked list", label: "Linked List" },
+    { value: "recursion", label: "Recursion" },
   ];
 
   const difficultyOptions = [
@@ -44,23 +70,63 @@ export default function Mock() {
     { value: "microsoft", label: "Microsoft" },
   ];
 
-  const startInterview = () => {
-    const initialMessages = [
-      {
-        id: 1,
-        sender: "AI",
-        text: `Hi! I'm your AI interviewer. We'll focus on ${sessionSettings.topic} at ${sessionSettings.difficulty} level.`,
-        timestamp: new Date(),
-      },
-    ];
+  const startInterview = async () => {
+    if (!user?.id) {
+      toast.error("Please log in to start mock interview");
+      return;
+    }
 
-    setMessages(initialMessages);
-    setTimeRemaining(sessionSettings.timeLimit * 60);
-    setSessionState("active");
+    setIsStarting(true);
+    const loadingToast = toast.loading("🤖 Starting your interview...", {
+      duration: Infinity,
+    });
+
+    try {
+      console.log("Starting interview with settings:", sessionSettings);
+
+      // Call our backend API
+      const response = await createMockInterview(user.id, sessionSettings);
+      console.log("Interview started:", response);
+
+      // Store session data
+      setSessionData(response);
+
+      // Set initial message from AI with the actual problem
+      const initialMessages = [
+        {
+          id: 1,
+          sender: "ai",
+          text: response.initialMessage,
+          timestamp: new Date(),
+        },
+      ];
+
+      setMessages(initialMessages);
+      setTimeRemaining(sessionSettings.timeLimit * 60);
+      setSessionState("active");
+
+      toast.success("✅ Interview started! Good luck!", {
+        id: loadingToast,
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error("Error starting interview:", error);
+      toast.error(error.message || "Failed to start interview", {
+        id: loadingToast,
+        duration: 3000,
+      });
+    } finally {
+      setIsStarting(false);
+    }
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!userInput.trim()) return;
+
+    if (!sessionData?.sessionId) {
+      toast.error("Session not found. Please restart the interview.");
+      return;
+    }
 
     const userMessage = {
       id: messages.length + 1,
@@ -71,51 +137,86 @@ export default function Mock() {
 
     setMessages((prev) => [...prev, userMessage]);
     setUserInput("");
-    setIsTyping(true);
+    setIsAiTyping(true);
 
-    setTimeout(() => {
-      setMessages((prev) => {
-        const aiResponse = {
-          id: messages.length + 2, // This uses closure value of messages.length
-          sender: "ai",
-          text: "Great! What's the time complexity?",
-          timestamp: new Date(),
-        };
-        return [...prev, aiResponse];
-      });
-      setIsTyping(false);
-    }, 2000);
+    try {
+      console.log("Sending message to session:", sessionData.sessionId);
+
+      // Call real API
+      const response = await sendMockMessage(sessionData.sessionId, userInput);
+      console.log("AI response received:", response);
+
+      // Add AI response to messages
+      const aiResponse = {
+        id: response.aiMessage.id,
+        sender: "ai",
+        text: response.aiMessage.message,
+        timestamp: new Date(response.aiMessage.timestamp),
+      };
+
+      setMessages((prev) => [...prev, aiResponse]);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error(error.message || "Failed to send message");
+
+      // Add error message to chat
+      const errorMessage = {
+        id: Math.floor(Math.random() * 100) + 200,
+        sender: "ai",
+        text: "Sorry, I'm having trouble responding right now. Please try again.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsAiTyping(false);
+    }
   };
 
-  const sendCode = () => {
-    if (!codeInput.trim()) return;
+  const endInterview = async () => {
+    if (!sessionData?.sessionId) {
+      toast.error("Session not found. Cannot generate feedback.");
+      setSessionState("completed");
+      return;
+    }
 
-    const codeMessage = {
-      id: messages.length + 1, // User messages get +1
-      sender: "user",
-      text: `Here's my code:\n${codeInput}\n`,
-      timestamp: new Date(),
-    };
+    setIsEnding(true);
+    const loadingToast = toast.loading("🤖 Analyzing your performance...", {
+      duration: Infinity,
+    });
 
-    setMessages((prev) => [...prev, codeMessage]);
-    setIsTyping(true);
+    try {
+      console.log("Ending interview session:", sessionData.sessionId);
 
-    setTimeout(() => {
-      setMessages((prev) => {
-        const aiResponse = {
-          id: messages.length + 2, // Add +1 to ensure uniqueness
-          sender: "ai",
-          text: "Let me review your code... This looks good! Can you walk me through your approach and explain the time complexity?",
-          timestamp: new Date(),
-        };
-        return [...prev, aiResponse];
+      // Call real API to get feedback
+      const response = await endMockInterview(sessionData.sessionId);
+      console.log("Feedback received:", response);
+
+      // Store feedback data
+      setFeedbackData(response);
+      setSessionState("completed");
+
+      toast.success("✅ Interview completed! Here's your feedback.", {
+        id: loadingToast,
+        duration: 3000,
       });
-      setIsTyping(false);
-    }, 2000);
-  };
+    } catch (error) {
+      console.error("Error ending interview:", error);
+      toast.error(error.message || "Failed to generate feedback", {
+        id: loadingToast,
+        duration: 3000,
+      });
 
-  const endInterview = () => {
-    setSessionState("completed");
+      // Only transition to completed state if it's not a "no conversation" error
+      if (
+        !error.message ||
+        !error.message.includes("No user messages to analyze")
+      ) {
+        setSessionState("completed");
+      }
+      // If no conversation, stay in active state so user can continue chatting
+    } finally {
+      setIsEnding(false);
+    }
   };
 
   const resetInterview = () => {
@@ -124,7 +225,32 @@ export default function Mock() {
     setUserInput("");
     setCodeInput("");
     setTimeRemaining(0);
+    setSessionData(null);
+    setFeedbackData(null);
   };
+
+  // Timer effect - countdown every second
+  useEffect(() => {
+    let timerid = null;
+
+    if (sessionState === "active" && timeRemaining > 0) {
+      timerid = setInterval(() => {
+        setTimeRemaining((prev) => {
+          if (prev <= 1) {
+            toast.error("⏰ Time's up! Interview ending...");
+            endInterview();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timerid) clearInterval(timerid);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionState]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -190,9 +316,9 @@ export default function Mock() {
                 </label>
                 <input
                   type="range"
-                  min="15"
-                  max="90"
-                  step="15"
+                  min="5"
+                  max="30"
+                  step="5"
                   value={sessionSettings.timeLimit}
                   onChange={(e) =>
                     setSessionSettings({
@@ -203,17 +329,18 @@ export default function Mock() {
                   className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
                 />
                 <div className="flex justify-between text-xs text-gray-400 mt-1">
-                  <span>15 min</span>
-                  <span>90 min</span>
+                  <span>5 min</span>
+                  <span>30 min</span>
                 </div>
               </div>
             </div>
 
             <button
               onClick={startInterview}
-              className="button-simple text-lg py-3 px-8"
+              disabled={isStarting}
+              className="button-simple text-lg py-3 px-8 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              🚀 Start Interview
+              {isStarting ? "🤖 Starting..." : "🚀 Start Interview"}
             </button>
           </div>
         </div>
@@ -232,8 +359,15 @@ export default function Mock() {
             <div>
               <h1 className="text-2xl font-bold text-white">Live Interview</h1>
               <p className="text-gray-300 capitalize">
-                {sessionSettings.topic} • {sessionSettings.difficulty}
+                {sessionData?.topic || sessionSettings.topic} •{" "}
+                {sessionData?.difficulty || sessionSettings.difficulty} •{" "}
+                {sessionData?.company || sessionSettings.company}
               </p>
+              {sessionData?.problemTitle && (
+                <p className="text-orange-400 font-medium mt-1">
+                  Problem: {sessionData.problemTitle}
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-4">
               <div className="text-center">
@@ -244,12 +378,64 @@ export default function Mock() {
               </div>
               <button
                 onClick={endInterview}
-                className="px-4 py-2 rounded-xl text-sm font-medium text-gray-300 hover:text-white bg-gray-800/50 hover:bg-red-500/80 border border-gray-700/50 hover:border-red-500/50 transition-all duration-200"
+                disabled={isEnding}
+                className="px-4 py-2 rounded-xl text-sm font-medium text-gray-300 hover:text-white bg-gray-800/50 hover:bg-red-500/80 border border-gray-700/50 hover:border-red-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                End Interview
+                {isEnding ? "Ending..." : "End Interview"}
               </button>
             </div>
           </div>
+
+          {/* Problem Description */}
+          {sessionData && (
+            <div className="card-base mb-6">
+              <h3 className="text-lg font-semibold text-white mb-4">
+                📋 Problem Statement
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-orange-400 font-medium mb-2">
+                    Description:
+                  </h4>
+                  <div className="text-gray-200 whitespace-pre-wrap">
+                    {/* Allows us to maintain whitespace order*/}
+                    {sessionData.problemDescription}
+                  </div>
+                </div>
+                {sessionData.examples && (
+                  <div>
+                    <h4 className="text-orange-400 font-medium mb-2">
+                      Examples:
+                    </h4>
+                    <div className="space-y-6">
+                      {sessionData.examples.map((example, index) => (
+                        <div
+                          key={index}
+                          className="text-gray-200 whitespace-pre-wrap  "
+                        >
+                          <div>
+                            <p>Input: {JSON.stringify(example.input)}</p>
+                            <p>Output: {JSON.stringify(example.output)}</p>
+                            <p>Explanation: {example.explanation}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {sessionData.constraints && (
+                  <div>
+                    <h4 className="text-orange-400 font-medium mb-2">
+                      Constraints:
+                    </h4>
+                    <div className="text-gray-200 whitespace-pre-wrap">
+                      {sessionData.constraints}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="grid lg:grid-cols-2 gap-6">
             <div className="card-base">
@@ -266,7 +452,7 @@ export default function Mock() {
                     }`}
                   >
                     <div
-                      className={`max-w-xs px-4 py-2 rounded-lg ${
+                      className={`max-w-xs px-4 py-2  rounded-lg ${
                         message.sender === "user"
                           ? "bg-orange-500 text-white"
                           : "bg-gray-700 text-gray-100"
@@ -280,7 +466,7 @@ export default function Mock() {
                   </div>
                 ))}
 
-                {isTyping && (
+                {isAiTyping && (
                   <div className="flex justify-start">
                     <div className="bg-gray-700 text-gray-100 px-4 py-2 rounded-lg">
                       <div className="text-sm">AI is typing...</div>
@@ -312,16 +498,11 @@ export default function Mock() {
               <textarea
                 value={codeInput}
                 onChange={(e) => setCodeInput(e.target.value)}
-                placeholder="// Write your solution here...
-    Example:
-    class Solution { 
-    public int[] twoSum(int[] nums, int target) {
-                   }  
-             }"
+                placeholder="// Write your solution here..."
                 className="w-full h-72 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-500 font-mono text-sm resize-none mb-3"
               />
               <button
-                onClick={sendCode}
+                onClick={() => sendMessage(`Here's my code:\n${codeInput}`)}
                 disabled={!codeInput.trim()}
                 className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -351,10 +532,18 @@ export default function Mock() {
           <div className="card-base mb-6">
             <div className="text-center">
               <div className="text-6xl font-bold text-orange-500 mb-2">
-                {mockScorecard.score}
+                {feedbackData?.score || mockScorecard.score}
               </div>
               <div className="text-xl text-gray-300">Overall Score</div>
-              <div className="text-gray-400 mt-2">Great job! 🎉</div>
+              <div className="text-gray-400 mt-2">
+                {feedbackData?.score >= 8
+                  ? "Excellent! 🎉"
+                  : feedbackData?.score >= 6
+                  ? "Good job! 👍"
+                  : feedbackData?.score >= 4
+                  ? "Keep practicing! 💪"
+                  : "Don't give up! 🌟"}
+              </div>
             </div>
           </div>
 
@@ -364,15 +553,17 @@ export default function Mock() {
                 ✅ Strengths
               </h3>
               <ul className="space-y-2">
-                {mockScorecard.strengths.map((strength, idx) => (
-                  <li
-                    key={idx}
-                    className="flex items-start gap-2 text-gray-300"
-                  >
-                    <span className="text-green-400">•</span>
-                    {strength}
-                  </li>
-                ))}
+                {(feedbackData?.strengths || mockScorecard.strengths).map(
+                  (strength, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-2 text-gray-300"
+                    >
+                      <span className="text-green-400">•</span>
+                      {strength}
+                    </li>
+                  )
+                )}
               </ul>
             </div>
 
@@ -381,18 +572,41 @@ export default function Mock() {
                 ⚠️ Improvements
               </h3>
               <ul className="space-y-2">
-                {mockScorecard.improvements.map((improvement, idx) => (
-                  <li
-                    key={idx}
-                    className="flex items-start gap-2 text-gray-300"
-                  >
-                    <span className="text-yellow-400">•</span>
-                    {improvement}
-                  </li>
-                ))}
+                {(feedbackData?.improvements || mockScorecard.improvements).map(
+                  (improvement, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-2 text-gray-300"
+                    >
+                      <span className="text-yellow-400">•</span>
+                      {improvement}
+                    </li>
+                  )
+                )}
               </ul>
             </div>
           </div>
+
+          {/* Missed Concepts */}
+          {feedbackData?.missedConcepts &&
+            feedbackData.missedConcepts.length > 0 && (
+              <div className="card-base mb-6">
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  📝 Missed Concepts
+                </h3>
+                <ul className="space-y-2">
+                  {feedbackData.missedConcepts.map((concept, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-2 text-gray-300"
+                    >
+                      <span className="text-blue-400">•</span>
+                      {concept}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
           <div className="card-base mb-6">
             <h3 className="text-lg font-semibold text-white mb-4">
@@ -402,13 +616,14 @@ export default function Mock() {
               <div>
                 <span className="text-gray-400">Time:</span>
                 <span className="ml-2 text-gray-100">
-                  {mockScorecard.timeComplexity}
+                  {feedbackData?.timeComplexity || mockScorecard.timeComplexity}
                 </span>
               </div>
               <div>
                 <span className="text-gray-400">Space:</span>
                 <span className="ml-2 text-gray-100">
-                  {mockScorecard.spaceComplexity}
+                  {feedbackData?.spaceComplexity ||
+                    mockScorecard.spaceComplexity}
                 </span>
               </div>
             </div>
@@ -418,19 +633,32 @@ export default function Mock() {
             <h3 className="text-lg font-semibold text-white mb-4">
               🎯 Next Steps
             </h3>
-            <p className="text-gray-300 mb-4">Try this problem next:</p>
+            <p className="text-gray-300 mb-4">
+              {feedbackData ? "AI Recommendations:" : "Try this problem next:"}
+            </p>
             <div className="bg-gray-800 p-4 rounded-lg">
               <span className="text-orange-400 font-medium">
-                {mockScorecard.nextProblem}
+                {feedbackData?.nextSteps || mockScorecard.nextProblem}
               </span>
             </div>
 
-            <div className="flex gap-3 mt-6">
+            {/* Additional feedback section */}
+            {feedbackData?.feedback && (
+              <div className="mt-4">
+                <h4 className="text-orange-400 font-medium mb-2">
+                  Detailed Feedback:
+                </h4>
+                <div className="bg-gray-800 p-4 rounded-lg">
+                  <p className="text-gray-300 whitespace-pre-wrap">
+                    {feedbackData.feedback}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-center gap-3 mt-6">
               <button onClick={resetInterview} className="button-simple">
                 🔄 New Interview
-              </button>
-              <button className="px-4 py-2 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-lg font-medium hover:bg-blue-500/30 transition-colors">
-                📚 Generate Flashcards
               </button>
             </div>
           </div>

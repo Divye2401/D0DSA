@@ -447,7 +447,7 @@ export default function Flashcards() {
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileUpload}
-                accept=".pdf,.docx,.txt"
+                accept=".pdf"
                 className="hidden"
               />
 

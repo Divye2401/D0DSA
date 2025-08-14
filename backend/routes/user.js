@@ -15,6 +15,11 @@ import {
   getTodaysTasks,
   toggleTaskCompletion,
 } from "../handlers/planHandlers.js";
+import {
+  startMockSession,
+  sendMockMessage,
+  endMockSession,
+} from "../handlers/mockHandlers.js";
 
 const userRouter = express.Router();
 
@@ -39,4 +44,7 @@ userRouter
 userRouter.route("/tasks/today/:userId").get(getTodaysTasks);
 userRouter.route("/tasks/toggle/:userId").put(toggleTaskCompletion);
 
+userRouter.route("/createmock/:userId").post(startMockSession);
+userRouter.route("/mockmessage/:sessionId").put(sendMockMessage);
+userRouter.route("/endmock/:sessionId").post(endMockSession);
 export default userRouter;
