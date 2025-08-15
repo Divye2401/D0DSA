@@ -132,7 +132,6 @@ export const syncLeetCodeHandler = async (req, res) => {
       });
     }
 
-    console.log("users", users.users[0].user_metadata);
     // Find user with matching leetcode_username
     const user = users.users.find(
       (u) => u.user_metadata?.leetcode_username === username
