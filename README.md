@@ -1,4 +1,4 @@
-# 🚀 DSA Prep - AI-Powered Data Structures & Algorithms Study Platform
+# 🚀 D0DSA - AI-Powered Data Structures & Algorithms Study Platform
 
 <div align="center">
 
@@ -12,7 +12,7 @@ _Revolutionize your coding interview preparation with AI-driven personalized stu
 
 ## 🎯 Overview
 
-DSA Prep is a comprehensive, AI-powered platform designed to optimize your data structures and algorithms preparation. Using advanced OpenAI integration, real-time LeetCode synchronization, and personalized learning paths, it transforms the way developers prepare for technical interviews.
+D0DSA is a comprehensive, AI-powered platform designed to optimize your data structures and algorithms preparation. Using advanced OpenAI integration, real-time LeetCode synchronization, and personalized learning paths, it transforms the way developers prepare for technical interviews.
 
 ## ✨ Key Features
 
@@ -139,7 +139,7 @@ VITE_SUPABASE_ANON_KEY=your_anon_key
 
 ### 🎯 AI Problem Recommendations
 
-![Problems Demo](https://via.placeholder.com/800x400/1a1a1a/orange?text=AI+Problem+Recommendations)
+![Problems Demo](frontend/src/assets/problems.png)
 
 Get personalized problem suggestions based on:
 
@@ -150,7 +150,7 @@ Get personalized problem suggestions based on:
 
 ### 📋 Smart Study Plans
 
-![Plan Demo](https://via.placeholder.com/800x400/1a1a1a/orange?text=AI+Study+Plans)
+![Plan Demo](frontend/src/assets/plan.png)
 
 AI-generated multi-day study schedules featuring:
 
@@ -161,7 +161,7 @@ AI-generated multi-day study schedules featuring:
 
 ### 🎤 Mock Interview Simulator
 
-![Mock Demo](https://via.placeholder.com/800x400/1a1a1a/orange?text=Mock+Interview+Simulator)
+![Mock Demo](frontend/src/assets/mock.png)
 
 Practice with AI interviewer:
 
@@ -172,7 +172,7 @@ Practice with AI interviewer:
 
 ### 📊 Progress Dashboard
 
-![Dashboard Demo](https://via.placeholder.com/800x400/1a1a1a/orange?text=Progress+Dashboard)
+![Dashboard Demo](frontend/src/assets/dashboard.png)
 
 Comprehensive analytics including:
 
