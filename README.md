@@ -139,7 +139,7 @@ VITE_SUPABASE_ANON_KEY=your_anon_key
 
 ### 🎯 AI Problem Recommendations
 
-![Problems Demo](./assets/problems.png)
+![Problems Demo](frontend/src/assets/problems.png)
 
 Get personalized problem suggestions based on:
 
@@ -150,7 +150,7 @@ Get personalized problem suggestions based on:
 
 ### 📋 Smart Study Plans
 
-![Plan Demo](./assets/plan.png)
+![Plan Demo](frontend/src/assets/plan.png)
 
 AI-generated multi-day study schedules featuring:
 
@@ -161,7 +161,7 @@ AI-generated multi-day study schedules featuring:
 
 ### 🎤 Mock Interview Simulator
 
-![Mock Demo](./assets/mock.png)
+![Mock Demo](frontend/src/assets/mock.png)
 
 Practice with AI interviewer:
 
@@ -172,7 +172,7 @@ Practice with AI interviewer:
 
 ### 📊 Progress Dashboard
 
-![Dashboard Demo](./assets/dashboard.png)
+![Dashboard Demo](frontend/src/assets/dashboard.png)
 
 Comprehensive analytics including:
 
