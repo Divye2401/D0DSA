@@ -2,9 +2,16 @@
 
 <div align="center">
 
-![DSA Prep Logo](https://img.shields.io/badge/DSA_Prep-AI_Powered-orange?style=for-the-badge&logo=react)
-[![Live Demo](https://img.shields.io/badge/Live-Demo-success?style=for-the-badge&logo=vercel)](https://dodsa-five.vercel.app)
-[![Backend API](https://img.shields.io/badge/API-Live-blue?style=for-the-badge&logo=render)](https://d0dsa.onrender.com/api/health)
+<div align="center">
+  <img src="frontend/src/assets/icon48.png" alt="DSA Prep Logo" width="120">
+  <br><br>
+  <a href="https://dodsa-five.vercel.app/">
+    <img src="https://img.shields.io/badge/-DEMO-brightgreen?style=for-the-badge">
+  </a>
+  <a href="your-extension-link">
+    <img src="https://img.shields.io/badge/-D0DSA%20Extension%20Chrome-blue?style=for-the-badge">
+  </a>
+</div>
 
 _Revolutionize your coding interview preparation with AI-driven personalized study plans_
 
