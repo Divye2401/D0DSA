@@ -14,6 +14,7 @@ export default function CustomDropdown({
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        //contains bcz any of its child element can also be clicked..JG
         setIsOpen(false);
       }
     };
