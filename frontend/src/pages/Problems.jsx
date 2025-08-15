@@ -384,9 +384,12 @@ export default function Problems() {
                     <a
                       href={
                         problem.leetcodeUrl ||
-                        `https://leetcode.com/problems/${(
-                          problem.problem_name || problem.title
-                        )?.toLowerCase()}/`
+                        `https://leetcode.com/problems/${
+                          problem.slug ||
+                          (problem.problem_name || problem.title)
+                            ?.toLowerCase()
+                            .replace(/\s+/g, "-")
+                        }/`
                       }
                       target="_blank"
                       rel="noopener noreferrer"
