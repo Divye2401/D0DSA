@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Navbar from "../components/general/Navbar";
 import CustomDropdown from "../components/general/CustomDropdown";
+import { HiMicrophone, HiChartBar } from "react-icons/hi2";
 import { toast } from "react-hot-toast";
 import useAuthStore from "../store/authStore";
 import {
@@ -266,9 +267,12 @@ export default function Mock() {
 
         <div className="max-w-4xl mx-auto p-4">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-white mb-2">
-              🎯 Mock Interview Session
-            </h1>
+            <div className="flex items-center gap-3 mb-2">
+              <HiMicrophone className="w-12 h-12 text-orange-400" />
+              <h1 className="text-3xl font-bold text-white">
+                Mock Interview Session
+              </h1>
+            </div>
             <p className="text-gray-300">
               Practice with AI interviewer - get real-time feedback
             </p>
@@ -586,9 +590,12 @@ export default function Mock() {
 
         <div className="max-w-4xl mx-auto p-4">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-white mb-2">
-              📊 Interview Complete!
-            </h1>
+            <div className="flex items-center gap-3 mb-2">
+              <HiChartBar className="w-12 h-12 text-orange-400" />
+              <h1 className="text-3xl font-bold text-white">
+                Interview Complete!
+              </h1>
+            </div>
             <p className="text-gray-300">Here's your performance summary</p>
           </div>
 

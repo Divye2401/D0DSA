@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import supabase from "../utils/supabaseclient";
 import Spinner from "../components/general/Spinner";
+import icon48 from "../assets/icon48.png";
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -87,9 +88,16 @@ export default function Signup() {
 
         {/* Header */}
         <div className="text-center mb-10 relative">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent mb-3">
-            Join DSA Prep
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <img
+              src={icon48}
+              alt="D0 DSA"
+              className="w-16 h-14 mr-2 bg-orange-500 p-2 rounded-lg"
+            />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
+              D0 DSA
+            </h1>
+          </div>
           <p className="text-gray-400 text-lg">Create your account</p>
         </div>
 

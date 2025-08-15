@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Navbar from "../components/general/Navbar";
+import { HiFolder } from "react-icons/hi2";
 import useAuthStore from "../store/authStore";
 import {
   uploadPDFAndGenerateFlashcards,
@@ -249,9 +250,12 @@ export default function Flashcards() {
       <div className="max-w-4xl mx-auto p-4">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            🗂️ AI Flashcard Generator
-          </h1>
+          <div className="flex items-center gap-3 mb-2">
+            <HiFolder className="w-12 h-12 text-orange-400" />
+            <h1 className="text-3xl font-bold text-white">
+              AI Flashcard Generator
+            </h1>
+          </div>
           <p className="text-gray-300">
             Review concepts and mistakes with AI-generated flashcards
           </p>
@@ -282,7 +286,9 @@ export default function Flashcards() {
           {flashcards.length === 0 ? (
             // Empty State
             <div className="card-base h-80 flex flex-col justify-center items-center text-center">
-              <div className="text-6xl mb-4">🗂️</div>
+              <div className="text-6xl mb-4">
+                <HiFolder className="w-18 h-18 text-orange-400" />
+              </div>
               <h3 className="text-lg font-medium text-gray-200 mb-2">
                 No Flashcards Yet
               </h3>

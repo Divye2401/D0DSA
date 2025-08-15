@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
+import { HiClipboardList } from "react-icons/hi2";
 import Navbar from "../components/general/Navbar";
 import CustomDropdown from "../components/general/CustomDropdown";
 import Spinner from "../components/general/Spinner";
@@ -273,9 +274,12 @@ export default function Plan() {
       <div className="max-w-6xl mx-auto p-4">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            📋 AI Daily Plan Generator
-          </h1>
+          <div className="flex items-center gap-3 mb-2">
+            <HiClipboardList className="w-12 h-12 text-orange-400" />
+            <h1 className="text-3xl font-bold text-white">
+              AI Daily Plan Generator
+            </h1>
+          </div>
           <p className="text-gray-300 p-4">
             Create a personalized multi-day DSA prep plan tailored to your needs
           </p>

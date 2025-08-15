@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "../components/general/Navbar";
 import CustomDropdown from "../components/general/CustomDropdown";
+import { HiLightBulb } from "react-icons/hi2";
 import useAuthStore from "../store/authStore";
 import { fetchRecommendedProblems } from "../utils/recommendationsAPI";
 import { useLeetCodeSync } from "../hooks/useLeetCodeSync";
@@ -116,9 +117,12 @@ export default function Problems() {
       <div className="max-w-6xl mx-auto p-4">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            💡 AI Problem Recommendations
-          </h1>
+          <div className="flex items-center gap-3 mb-2">
+            <HiLightBulb className="w-12 h-12 text-orange-400" />
+            <h1 className="text-3xl font-bold text-white">
+              AI Problem Recommendations
+            </h1>
+          </div>
           <p className="text-gray-300">
             Personalized problems based on your weak topics and interview
             frequency

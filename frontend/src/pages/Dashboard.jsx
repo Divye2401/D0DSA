@@ -2,6 +2,7 @@ import useAuthStore from "../store/authStore";
 import supabase from "../utils/supabaseclient";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { HiChartBar } from "react-icons/hi2";
 
 import { fetchDashboardStats } from "../utils/dashboardAPI";
 import { useLeetCodeSync } from "../hooks/useLeetCodeSync";
@@ -88,9 +89,12 @@ export default function Dashboard() {
       <div className="max-w-6xl mx-auto p-4">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            DSA Analytics Dashboard 📊
-          </h1>
+          <div className="flex items-center gap-3 mb-2">
+            <HiChartBar className="w-12 h-12 text-orange-400" />
+            <h1 className="text-3xl font-bold text-white">
+              DSA Analytics Dashboard
+            </h1>
+          </div>
           <p className="text-gray-300">
             Welcome back,{" "}
             {user?.user_metadata?.full_name.split(" ")[0] || user?.email}!

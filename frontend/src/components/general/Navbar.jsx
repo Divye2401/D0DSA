@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
 import { useLeetCodeSync } from "../../hooks/useLeetCodeSync";
 import Spinner from "./Spinner";
+import icon48 from "../../assets/icon48.png";
 
 export default function Navbar() {
   const location = useLocation();
@@ -41,7 +42,11 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl">
-            <span className="text-2xl">🎯</span>
+            <img
+              src={icon48}
+              alt="D0 DSA"
+              className="w-8 h-8 bg-orange-500 p-1 rounded-lg"
+            />
             <span className="text-xl font-bold text-white">D0 DSA</span>
           </div>
 
