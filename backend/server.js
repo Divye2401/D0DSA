@@ -24,10 +24,34 @@ const supabase = createClient(
 // Middleware
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === "production"
-        ? ["https://dodsa-five.vercel.app"] // Your Vercel frontend
-        : ["http://localhost:3000"], // Only for local development
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      const allowedOrigins =
+        process.env.NODE_ENV === "production"
+          ? [
+              "https://dodsa-five.vercel.app", // Your Vercel frontend
+            ]
+          : [
+              "http://localhost:3000", // Local development
+            ];
+
+      // Allow any chrome-extension origin
+      if (
+        origin.startsWith("chrome-extension://") ||
+        origin.startsWith("moz-extension://")
+      ) {
+        return callback(null, true);
+      }
+
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
