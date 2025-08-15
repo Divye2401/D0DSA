@@ -13,7 +13,7 @@ import userRouter from "./routes/user.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 4000;
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -26,7 +26,7 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? false // No CORS needed in production (same domain)
+        ? ["https://dodsa-five.vercel.app"] // Your Vercel frontend
         : ["http://localhost:3000"], // Only for local development
     credentials: true,
   })

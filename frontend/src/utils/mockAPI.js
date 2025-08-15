@@ -1,5 +1,7 @@
 const API_BASE_URL =
-  import.meta.env.MODE === "production" ? "" : "http://localhost:4000";
+  import.meta.env.MODE === "production"
+    ? "https://d0dsa.onrender.com"
+    : "http://localhost:4000";
 /**
  * Start a new mock interview session
  */
