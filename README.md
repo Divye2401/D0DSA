@@ -8,7 +8,7 @@
   <a href="https://dodsa-five.vercel.app/">
     <img src="https://img.shields.io/badge/-DEMO-brightgreen?style=for-the-badge">
   </a>
-  <a href="your-extension-link">
+  <a href="[your-extension-link](https://chromewebstore.google.com/detail/dsa-prep-leetcode-sync/fdljbdkjhcbnnlpcdbfleibfkkgpjckf?authuser=0&hl=en)">
     <img src="https://img.shields.io/badge/-D0DSA%20Extension%20Chrome-blue?style=for-the-badge">
   </a>
 </div>
