@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Navbar from "../components/general/Navbar";
 import CustomDropdown from "../components/general/CustomDropdown";
 import { HiMicrophone, HiChartBar } from "react-icons/hi2";
+import TextareaAutosize from "react-textarea-autosize";
 import { toast } from "react-hot-toast";
 import useAuthStore from "../store/authStore";
 import {
@@ -121,8 +122,9 @@ export default function Mock() {
     }
   };
 
-  const sendMessage = async () => {
-    if (!userInput.trim()) return;
+  const sendMessage = async (messageText = null) => {
+    const textToSend = messageText || userInput;
+    if (!textToSend.trim()) return;
 
     if (!sessionData?.sessionId) {
       toast.error("Session not found. Please restart the interview.");
@@ -132,7 +134,7 @@ export default function Mock() {
     const userMessage = {
       id: messages.length + 1,
       sender: "user",
-      text: userInput,
+      text: textToSend,
       timestamp: new Date(),
     };
 
@@ -144,7 +146,7 @@ export default function Mock() {
       console.log("Sending message to session:", sessionData.sessionId);
 
       // Call real API
-      const response = await sendMockMessage(sessionData.sessionId, userInput);
+      const response = await sendMockMessage(sessionData.sessionId, textToSend);
       console.log("AI response received:", response);
 
       // Add AI response to messages
@@ -459,7 +461,7 @@ export default function Mock() {
                 💬 <span>Interview Chat</span>
               </h3>
 
-              <div className="flex-1 h-80 overflow-y-auto mb-4 space-y-4 p-2 bg-gray-900/30 rounded-lg">
+              <div className="flex-1 h-80 overflow-y-auto mb-4 space-y-4 p-2 bg-gray-900/30 rounded-lg ">
                 {messages.map((message) => (
                   <div
                     key={message.id}
@@ -545,22 +547,22 @@ export default function Mock() {
               <h3 className="text-lg font-medium text-gray-200 mb-4 flex items-center gap-2">
                 💻 <span>Code Editor</span>
               </h3>
-              <div className="flex-1 flex flex-col">
-                <textarea
+              <div className="flex-1 flex flex-col ">
+                <TextareaAutosize
                   value={codeInput}
                   onChange={(e) => setCodeInput(e.target.value)}
                   placeholder="// Write your solution here...
 // Use proper variable names and add comments
 // Think about edge cases and complexity"
+                  minRows={10}
+                  maxRows={25}
                   className="flex-1 w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent font-mono text-sm resize-none"
                 />
 
                 <div className="flex gap-2 mt-4 border-t border-gray-700/50 pt-4">
                   <button
                     onClick={() =>
-                      sendMessage(
-                        `Here's my solution:\n\n\`\`\`javascript\n${codeInput}\n\`\`\``
-                      )
+                      sendMessage(`Here's my solution:\n${codeInput}\n`)
                     }
                     disabled={!codeInput.trim()}
                     className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
