@@ -123,7 +123,14 @@ export default function Mock() {
   };
 
   const sendMessage = async (messageText = null) => {
-    const textToSend = messageText || userInput;
+    // Handle cases where messageText might be an event object
+    let textToSend;
+    if (typeof messageText === "string" && messageText.length > 0) {
+      textToSend = messageText;
+    } else {
+      textToSend = userInput;
+    }
+
     if (!textToSend.trim()) return;
 
     if (!sessionData?.sessionId) {
@@ -534,7 +541,7 @@ export default function Mock() {
                   className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-full text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
                 <button
-                  onClick={sendMessage}
+                  onClick={() => sendMessage()}
                   disabled={!userInput.trim()}
                   className="px-6 py-3 bg-orange-500 text-white rounded-full hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
@@ -547,7 +554,7 @@ export default function Mock() {
               <h3 className="text-lg font-medium text-gray-200 mb-4 flex items-center gap-2">
                 💻 <span>Code Editor</span>
               </h3>
-              <div className="flex-1 flex flex-col ">
+              <div className="flex-1 flex flex-col">
                 <TextareaAutosize
                   value={codeInput}
                   onChange={(e) => setCodeInput(e.target.value)}
@@ -555,8 +562,8 @@ export default function Mock() {
 // Use proper variable names and add comments
 // Think about edge cases and complexity"
                   minRows={10}
-                  maxRows={25}
-                  className="flex-1 w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent font-mono text-sm resize-none"
+                  maxRows={200}
+                  className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent font-mono text-sm resize-y"
                 />
 
                 <div className="flex gap-2 mt-4 border-t border-gray-700/50 pt-4">
